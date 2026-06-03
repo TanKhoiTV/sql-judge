@@ -448,9 +448,7 @@ function renderERDiagram() {
 	}
 
 	container.innerHTML =
-		'<div class="mermaid" style="text-align:center">' +
-		escHtml(mmd) +
-		"</div>";
+		'<div class="mermaid" style="text-align:center">' + escHtml(mmd) + "</div>";
 
 	const el = container.querySelector(".mermaid") as HTMLElement | null;
 	if (el) {
@@ -505,9 +503,15 @@ function toggleBottomPanel(): void {
 	if (!panel) return;
 	const isCollapsed = panel.classList.toggle("collapsed");
 	if (isCollapsed) {
+		// Store current height on panel dataset before clearing, so we can restore on expand
+		if (panel.style.height && panel.style.height !== "auto")
+			panel.dataset.prevHeight = panel.style.height;
 		panel.style.height = "";
 	} else {
-		panel.style.display = "";
+		// Restore previous height or default to 22% viewport
+		const prev = panel.dataset.prevHeight;
+		panel.style.height = prev || Math.round(window.innerHeight * 0.22) + "px";
+		if (schemaData) setTimeout(() => renderERDiagram(), 50);
 	}
 	if (cmEditor) setTimeout(() => cmEditor.refresh(), 50);
 	if (cmSandbox) setTimeout(() => cmSandbox.refresh(), 50);
@@ -1048,6 +1052,12 @@ async function init() {
 	refreshEditorHints();
 	addSidebarResize();
 	addBottomResize();
+
+	// Set initial bottom panel height to ~22% of viewport (VS Code terminal default)
+	const bottomPanel = document.getElementById("bottomPanel");
+	if (bottomPanel) {
+		bottomPanel.style.height = Math.round(window.innerHeight * 0.22) + "px";
+	}
 }
 
 init().catch((e) => {
