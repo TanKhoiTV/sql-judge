@@ -189,10 +189,7 @@ function addSidebarResize(): void {
 			if (!isDragging) return;
 			let w = ev.clientX;
 			w = Math.max(280, Math.min(600, w));
-			document.documentElement.style.setProperty(
-				"--sidebar-width",
-				w + "px",
-			);
+			document.documentElement.style.setProperty("--sidebar-width", w + "px");
 		};
 
 		const onUp = () => {

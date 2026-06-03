@@ -132,13 +132,38 @@
 --------------------------------------------------------------------------------->
       <div class="bottom-panel" id="bottomPanel">
         <div class="bottom-bar" id="bottomBar">
-          <div class="bottom-tab active" data-bview="er" onclick="showBottomView('er')">🔗 ER Diagram</div>
-          <div class="bottom-tab" data-bview="checks" onclick="showBottomView('checks')">🔒 Checks</div>
-          <div class="bottom-tab" data-bview="desc" onclick="showBottomView('desc')">📋 Description</div>
-          <span style="flex:1"></span>
+          <div
+            class="bottom-tab active"
+            data-bview="er"
+            onclick="showBottomView('er')"
+          >
+            🔗 ER Diagram
+          </div>
+          <div
+            class="bottom-tab"
+            data-bview="checks"
+            onclick="showBottomView('checks')"
+          >
+            🔒 Checks
+          </div>
+          <div
+            class="bottom-tab"
+            data-bview="desc"
+            onclick="showBottomView('desc')"
+          >
+            📋 Description
+          </div>
+          <span style="flex: 1"></span>
           <div class="version-badge" id="versionBadge">v0.0.0</div>
           <div class="bottom-grip" id="bottomGrip" title="Resize">⋮⋮</div>
-          <div class="bottom-toggle" id="bottomToggle" onclick="toggleBottomPanel()" title="Toggle panel">▾</div>
+          <div
+            class="bottom-toggle"
+            id="bottomToggle"
+            onclick="toggleBottomPanel()"
+            title="Toggle panel"
+          >
+            ▾
+          </div>
         </div>
         <div class="bottom-body" id="bottomBody">
           <div class="bottom-view active" id="bv-er">
@@ -146,7 +171,15 @@
           </div>
           <div class="bottom-view" id="bv-checks"></div>
           <div class="bottom-view" id="bv-desc">
-            <div class="question" style="text-align:center;color:#8b949e;padding:40px 20px;margin:12px">
+            <div
+              class="question"
+              style="
+                text-align: center;
+                color: #8b949e;
+                padding: 40px 20px;
+                margin: 12px;
+              "
+            >
               <p>Schema description will be shown here.</p>
             </div>
           </div>
