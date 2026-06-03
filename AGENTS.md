@@ -38,3 +38,27 @@ npm start     # http-server on port 3000, serves public/
 - Version badge displayed at bottom-right corner of the web UI.
 - **ANY change** bumps version per semantic versioning (`MAJOR.MINOR.PATCH`).
 - **Never aggregate changes from different builds** — each change session gets its own version bump in a separate commit.
+
+## Conventional Commits
+
+All commits must follow the [Conventional Commits](https://www.conventionalcommits.org/) format:
+
+```
+<type>(<scope>): <description>
+
+[optional body]
+```
+
+Types: `feat` (new feature), `fix` (bug fix), `docs` (documentation),
+`refactor` (code change with no feature/fix), `style` (formatting, CSS),
+`perf` (performance), `test` (tests), `chore` (tooling, infra, config).
+
+Scope is optional but encouraged (e.g., `judge`, `ui`, `db`, `scripts`, `docs`).
+
+Examples:
+```
+feat(judge): add discount-analysis exercise
+fix(ui): correct ER diagram cardinality direction
+refactor: migrate to client-side sql.js
+chore: add .gitattributes for LF line endings
+```
