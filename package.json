@@ -4,7 +4,7 @@
   "description": "",
   "type": "module",
   "scripts": {
-    "build": "esbuild src/app.ts --bundle --outfile=public/app.js --platform=browser --target=es2020 --minify",
+    "build": "esbuild src/app.ts --outfile=public/app.js --platform=browser --target=es2020 --minify",
     "start": "npm run build && npx http-server public -p 3000 -c-1 --cors",
     "dev": "npx http-server public -p 3000 -c-1 --cors",
     "test": "npx tsx judge.ts",

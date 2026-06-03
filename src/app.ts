@@ -28,6 +28,7 @@ let cmSandbox: any = null;
 let activeDbName = "Unilever Product Management";
 let activeDbId = "unilever";
 let allExerciseDefs: any[] = [];
+let _bottomResizeTimer: any = null;
 
 // ─── SQL.js helpers ────────────────────────────────────────────────────────
 function runQuery(sql: string): any {
@@ -203,6 +204,10 @@ function addSidebarResize(): void {
 			if (cmSandbox) setTimeout(() => cmSandbox.refresh(), 0);
 		};
 
+		const onBlur = () => {
+			if (isDragging) onUp();
+		};
+		window.addEventListener("blur", onBlur);
 		document.addEventListener("mousemove", onMove);
 		document.addEventListener("mouseup", onUp);
 	});
@@ -404,20 +409,33 @@ function renderTableCards() {
 
 // ─── Schema viewer (ER diagram via Mermaid) ────────────────────────────────
 function renderERDiagram() {
-	if (!schemaData) return;
+	if (!schemaData) {
+		const container = document.getElementById("mermaidContainer");
+		if (container)
+			container.innerHTML =
+				'<div style="color:#8b949e;padding:20px;text-align:center">No tables to diagram.</div>';
+		return;
+	}
+	if (Object.keys(schemaData).length === 0) {
+		const container = document.getElementById("mermaidContainer");
+		if (container)
+			container.innerHTML =
+				'<div style="color:#8b949e;padding:20px;text-align:center">No tables found.</div>';
+		return;
+	}
 	const container = document.getElementById("mermaidContainer");
 
 	let mmd = "erDiagram\n";
 
 	for (const [name, info] of Object.entries(schemaData)) {
-		mmd += `  ${name} {\n`;
+		mmd += `  ${escHtml(name)} {\n`;
 		for (const c of info.columns) {
 			const cType = c.type.toLowerCase().replace(/\(.*/, "");
 			const tags = [];
 			if (c.pk) tags.push("PK");
 			if (info.foreignKeys.some((f) => f.from === c.name)) tags.push("FK");
 			const tagStr = tags.length > 0 ? " " + tags.join(", ") : "";
-			mmd += `    ${cType} ${c.name}${tagStr}\n`;
+			mmd += `    ${escHtml(cType)} ${escHtml(c.name)}${tagStr}\n`;
 		}
 		mmd += "  }\n";
 	}
@@ -425,13 +443,13 @@ function renderERDiagram() {
 	mmd += "\n";
 	for (const [name, info] of Object.entries(schemaData)) {
 		for (const fk of info.foreignKeys) {
-			mmd += `  ${fk.table} ||--o{ ${name} : "${fk.from} → ${fk.table}.${fk.to}"\n`;
+			mmd += `  ${escHtml(fk.table)} ||--o{ ${escHtml(name)} : "${escHtml(fk.from)} → ${escHtml(fk.table)}.${escHtml(fk.to)}"\n`;
 		}
 	}
 
 	container.innerHTML =
 		'<div class="mermaid" style="text-align:center">' +
-		mmd.replace(/</g, "&lt;") +
+		escHtml(mmd) +
 		"</div>";
 
 	const el = container.querySelector(".mermaid") as HTMLElement | null;
@@ -475,10 +493,22 @@ function showBottomView(view: string): void {
 	if (view === "er" && schemaData) {
 		setTimeout(() => renderERDiagram(), 100);
 	}
+	if (view === "checks" && schemaData) {
+		// checks may have missed init render; safe to re-call
+		const container = document.getElementById("bv-checks");
+		if (container && !container.innerHTML) renderChecks();
+	}
 }
 
 function toggleBottomPanel(): void {
-	document.getElementById("bottomPanel")?.classList.toggle("collapsed");
+	const panel = document.getElementById("bottomPanel");
+	if (!panel) return;
+	const isCollapsed = panel.classList.toggle("collapsed");
+	if (isCollapsed) {
+		panel.style.height = "";
+	} else {
+		panel.style.display = "";
+	}
 	if (cmEditor) setTimeout(() => cmEditor.refresh(), 50);
 	if (cmSandbox) setTimeout(() => cmSandbox.refresh(), 50);
 }
@@ -547,18 +577,24 @@ function addBottomResize(): void {
 			panel.style.height = h + "px";
 		};
 
+		const onBlur = () => {
+			if (isDragging) onUp();
+		};
+
 		const onUp = () => {
 			isDragging = false;
 			document.body.style.cursor = "";
 			document.body.style.userSelect = "";
 			document.removeEventListener("mousemove", onMove);
 			document.removeEventListener("mouseup", onUp);
-			clearTimeout((panel as any)._resizeTimer);
-			(panel as any)._resizeTimer = setTimeout(() => {
+			window.removeEventListener("blur", onBlur);
+			clearTimeout(_bottomResizeTimer);
+			_bottomResizeTimer = setTimeout(() => {
 				if (schemaData) renderERDiagram();
 			}, 300);
 		};
 
+		window.addEventListener("blur", onBlur);
 		document.addEventListener("mousemove", onMove);
 		document.addEventListener("mouseup", onUp);
 	});
