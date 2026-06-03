@@ -1,0 +1,119 @@
+[
+  {
+    "id": "01-simple-select",
+    "title": "All products with their prices",
+    "difficulty": "Easy",
+    "tables": ["HANG_HOA"],
+    "question": "Show all products: their code (MAHH), name (TENHH), unit price (DONGIA), and stock quantity (SLTON). Order by price descending.",
+    "solution": "SELECT MAHH, TENHH, DONGIA, SLTON\nFROM HANG_HOA\nORDER BY DONGIA DESC;",
+    "hint": "Use SELECT ... FROM HANG_HOA with ORDER BY"
+  },
+  {
+    "id": "02-where-clause",
+    "title": "Products in a specific group",
+    "difficulty": "Easy",
+    "tables": ["HANG_HOA", "NHOM_HANG"],
+    "question": "Find all products in the 'Thực phẩm' (Food) group. Show MAHH, TENHH, DONGIA. The group code for food is 'TP'.",
+    "solution": "SELECT MAHH, TENHH, DONGIA\nFROM HANG_HOA\nWHERE MANHOM = 'TP';",
+    "hint": "Use WHERE MANHOM = 'TP'"
+  },
+  {
+    "id": "03-simple-join",
+    "title": "Products with group names",
+    "difficulty": "Easy",
+    "tables": ["HANG_HOA", "NHOM_HANG"],
+    "question": "Show all products with their group name. Display MAHH, TENHH (as 'SanPham'), TENNHOM (as 'NhomHang'), and DONGIA.",
+    "solution": "SELECT h.MAHH, h.TENHH AS SanPham, n.TENNHOM AS NhomHang, h.DONGIA\nFROM HANG_HOA h\nJOIN NHOM_HANG n ON h.MANHOM = n.MANHOM\nORDER BY n.TENNHOM, h.MAHH;",
+    "hint": "Use JOIN NHOM_HANG ON h.MANHOM = n.MANHOM"
+  },
+  {
+    "id": "04-aggregation",
+    "title": "Products per group",
+    "difficulty": "Easy",
+    "tables": ["HANG_HOA", "NHOM_HANG"],
+    "question": "Count how many products are in each product group. Show TENNHOM (group name) and the count (as 'SoLuong').",
+    "solution": "SELECT n.TENNHOM, COUNT(*) AS SoLuong\nFROM HANG_HOA h\nJOIN NHOM_HANG n ON h.MANHOM = n.MANHOM\nGROUP BY n.TENNHOM;",
+    "hint": "Use GROUP BY with COUNT(*)"
+  },
+  {
+    "id": "05-revenue-by-group",
+    "title": "Revenue by product group",
+    "difficulty": "Medium",
+    "tables": ["CTHD", "HANG_HOA", "NHOM_HANG"],
+    "question": "Calculate total revenue (sum of THANHTIEN) for each product group. Show TENNHOM and total revenue (as 'DoanhThu'). Order by revenue descending.",
+    "solution": "SELECT n.TENNHOM, SUM(c.THANHTIEN) AS DoanhThu\nFROM CTHD c\nJOIN HANG_HOA h ON c.MAHH = h.MAHH\nJOIN NHOM_HANG n ON h.MANHOM = n.MANHOM\nGROUP BY n.TENNHOM\nORDER BY DoanhThu DESC;",
+    "hint": "Join CTHD → HANG_HOA → NHOM_HANG, then GROUP BY"
+  },
+  {
+    "id": "06-top-selling",
+    "title": "Top 3 best-selling products",
+    "difficulty": "Medium",
+    "tables": ["CTHD", "HANG_HOA"],
+    "question": "Find the top 3 products by total quantity sold (SLBAN). Show MAHH, TENHH, and total quantity sold (as 'TongSL').",
+    "solution": "SELECT h.MAHH, h.TENHH, SUM(c.SLBAN) AS TongSL\nFROM CTHD c\nJOIN HANG_HOA h ON c.MAHH = h.MAHH\nGROUP BY h.MAHH\nORDER BY TongSL DESC\nLIMIT 3;",
+    "hint": "Use SUM(c.SLBAN), GROUP BY, ORDER BY DESC, LIMIT 3"
+  },
+  {
+    "id": "07-employees-by-type",
+    "title": "Employees grouped by role",
+    "difficulty": "Medium",
+    "tables": ["NHAN_VIEN", "LOAI_NV"],
+    "question": "For each employee type, show the role name (TENLOAI) and the number of employees (as 'SoNV'). Only include types that have at least 5 employees.",
+    "solution": "SELECT l.TENLOAI, COUNT(*) AS SoNV\nFROM NHAN_VIEN e\nJOIN LOAI_NV l ON e.MALNV = l.MALNV\nGROUP BY l.TENLOAI\nHAVING COUNT(*) >= 5;",
+    "hint": "Use HAVING COUNT(*) >= 5 after GROUP BY"
+  },
+  {
+    "id": "08-three-table-join",
+    "title": "Invoice details with product and agent names",
+    "difficulty": "Medium",
+    "tables": ["CTHD", "HANG_HOA", "HOA_DON", "DAI_LY"],
+    "question": "Show invoice details: MAHD, TENHH (product name), SLBAN (quantity sold), and TENDL (agent name). Join CTHD → HANG_HOA for product and CTHD → HOA_DON → DAI_LY for agent.",
+    "solution": "SELECT c.MAHD, h.TENHH, c.SLBAN, dl.TENDL\nFROM CTHD c\nJOIN HANG_HOA h ON c.MAHH = h.MAHH\nJOIN HOA_DON hd ON c.MAHD = hd.MAHD\nJOIN DAI_LY dl ON hd.MADL = dl.MADL;",
+    "hint": "You need 3 JOINs: CTHD → HANG_HOA, CTHD → HOA_DON, HOA_DON → DAI_LY"
+  },
+  {
+    "id": "09-subquery",
+    "title": "Products above average price",
+    "difficulty": "Hard",
+    "tables": ["HANG_HOA"],
+    "question": "Find products whose price (DONGIA) is higher than the average price of all products. Show MAHH, TENHH, DONGIA.",
+    "solution": "SELECT MAHH, TENHH, DONGIA\nFROM HANG_HOA\nWHERE DONGIA > (SELECT AVG(DONGIA) FROM HANG_HOA);",
+    "hint": "Use WHERE DONGIA > (SELECT AVG(DONGIA) FROM HANG_HOA)"
+  },
+  {
+    "id": "10-most-valuable-agent",
+    "title": "Highest-spending agent",
+    "difficulty": "Hard",
+    "tables": ["CTHD", "HOA_DON", "DAI_LY"],
+    "question": "Which agent (TENDL) spent the most total money across all invoices? Show TENDL and total spent (as 'TongChiTieu'). Order by total descending, limit 1.",
+    "solution": "SELECT dl.TENDL, SUM(c.THANHTIEN) AS TongChiTieu\nFROM CTHD c\nJOIN HOA_DON hd ON c.MAHD = hd.MAHD\nJOIN DAI_LY dl ON hd.MADL = dl.MADL\nGROUP BY dl.MADL\nORDER BY TongChiTieu DESC\nLIMIT 1;",
+    "hint": "Use 3 JOINs, GROUP BY agent, ORDER BY SUM, LIMIT 1"
+  },
+  {
+    "id": "11-date-range",
+    "title": "Invoices in a date range",
+    "difficulty": "Easy",
+    "tables": ["HOA_DON", "DAI_LY"],
+    "question": "Show all invoices from February 2008. Display MAHD, NGAYLAP, TONGTIEN, and TENDL (agent name). Order by invoice code.",
+    "solution": "SELECT hd.MAHD, hd.NGAYLAP, hd.TONGTIEN, dl.TENDL\nFROM HOA_DON hd\nJOIN DAI_LY dl ON hd.MADL = dl.MADL\nWHERE hd.NGAYLAP >= '2008-02-01' AND hd.NGAYLAP < '2008-03-01'\nORDER BY hd.MAHD;",
+    "hint": "Use WHERE NGAYLAP >= '2008-02-01' AND NGAYLAP < '2008-03-01'"
+  },
+  {
+    "id": "12-team-performance",
+    "title": "Team revenue ranking",
+    "difficulty": "Hard",
+    "tables": ["CTHD", "HOA_DON", "NHAN_VIEN", "DOI"],
+    "question": "Calculate total revenue generated by each team. Show MADOI (team code) and total revenue (as 'DoanhThu'). Only include teams that have generated revenue. Order by revenue descending.",
+    "solution": "SELECT e.MADOI, SUM(c.THANHTIEN) AS DoanhThu\nFROM CTHD c\nJOIN HOA_DON hd ON c.MAHD = hd.MAHD\nJOIN NHAN_VIEN e ON hd.MANV = e.MANV\nWHERE e.MADOI IS NOT NULL\nGROUP BY e.MADOI\nORDER BY DoanhThu DESC;",
+    "hint": "Join CTHD → HOA_DON → NHAN_VIEN, filtering out NULL teams with WHERE e.MADOI IS NOT NULL"
+  },
+  {
+    "id": "13-discount-analysis",
+    "title": "Invoices with high discounts",
+    "difficulty": "Medium",
+    "tables": ["CTHD", "HOA_DON", "DAI_LY"],
+    "question": "Find invoice details where the discount rate (CKBAN) is 20% or more. Show MAHD, TENHH (product name), SLBAN, CKBAN, THANHTIEN, and TENDL (agent name). Order by discount descending.",
+    "solution": "SELECT c.MAHD, h.TENHH, c.SLBAN, c.CKBAN, c.THANHTIEN, dl.TENDL\nFROM CTHD c\nJOIN HANG_HOA h ON c.MAHH = h.MAHH\nJOIN HOA_DON hd ON c.MAHD = hd.MAHD\nJOIN DAI_LY dl ON hd.MADL = dl.MADL\nWHERE c.CKBAN >= 0.20\nORDER BY c.CKBAN DESC;",
+    "hint": "Filter with WHERE CKBAN >= 0.20"
+  }
+]

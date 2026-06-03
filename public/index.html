@@ -23,639 +23,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/hint/show-hint.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/hint/sql-hint.min.js"></script>
 
-    <!-- Mermaid.js — ER diagram rendering -->
+    <!-- SQL.js — client-side SQLite via WASM -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.11.0/sql-wasm.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
 
-    <style>
-      * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
-      body {
-        font-family: -apple-system, system-ui, sans-serif;
-        background: #0d1117;
-        color: #e6edf3;
-        min-height: 100vh;
-        display: flex;
-      }
-      ::-webkit-scrollbar {
-        width: 6px;
-      }
-      ::-webkit-scrollbar-track {
-        background: #161b22;
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #30363d;
-        border-radius: 3px;
-      }
-
-      /* ─── Sidebar ────────────────────────────────────── */
-      .sidebar {
-        width: 320px;
-        min-width: 320px;
-        background: #161b22;
-        border-right: 1px solid #30363d;
-        display: flex;
-        flex-direction: column;
-      }
-      .sidebar-tabs {
-        display: flex;
-        border-bottom: 1px solid #30363d;
-      }
-      .sidebar-tab {
-        flex: 1;
-        padding: 10px;
-        text-align: center;
-        font-size: 12px;
-        font-weight: 500;
-        cursor: pointer;
-        border-bottom: 2px solid transparent;
-        color: #8b949e;
-        transition: all 0.1s;
-      }
-      .sidebar-tab:hover {
-        color: #c9d1d9;
-        background: #1c2128;
-      }
-      .sidebar-tab.active {
-        color: #f0f6fc;
-        border-bottom-color: #58a6ff;
-      }
-      .sidebar-panel {
-        flex: 1;
-        overflow-y: auto;
-        display: none;
-      }
-      .sidebar-panel.active {
-        display: flex;
-        flex-direction: column;
-      }
-
-      /* Exercises list */
-      .exercise-item {
-        padding: 10px 16px;
-        cursor: pointer;
-        border-left: 3px solid transparent;
-        transition: all 0.1s;
-      }
-      .exercise-item:hover {
-        background: #21262d;
-      }
-      .exercise-item.active {
-        border-left-color: #58a6ff;
-        background: #1c2128;
-      }
-      .exercise-item .title {
-        font-size: 13px;
-        font-weight: 500;
-      }
-      .exercise-item .meta {
-        font-size: 11px;
-        color: #8b949e;
-        margin-top: 2px;
-      }
-      .diff-badge {
-        display: inline-block;
-        font-size: 10px;
-        padding: 1px 6px;
-        border-radius: 8px;
-        margin-right: 6px;
-        font-weight: 500;
-      }
-      .diff-Easy {
-        background: #1f6f31;
-        color: #7ee787;
-      }
-      .diff-Medium {
-        background: #9e6a03;
-        color: #d29922;
-      }
-      .diff-Hard {
-        background: #8b3a3a;
-        color: #ff7b72;
-      }
-
-      /* ─── Schema panel ────────────────────────────────── */
-      .schema-tabs {
-        display: flex;
-        padding: 8px 12px;
-        gap: 6px;
-        border-bottom: 1px solid #30363d;
-      }
-      .schema-tab {
-        padding: 4px 10px;
-        font-size: 11px;
-        border-radius: 4px;
-        cursor: pointer;
-        border: 1px solid #30363d;
-        background: #21262d;
-        color: #8b949e;
-      }
-      .schema-tab.active {
-        background: #1f6feb;
-        border-color: #1f6feb;
-        color: #fff;
-      }
-      .schema-view {
-        display: none;
-        flex: 1;
-        overflow-y: auto;
-      }
-      .schema-view.active {
-        display: block;
-      }
-
-      /* Table cards */
-      .table-cards {
-        padding: 10px;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-      }
-      .table-card {
-        background: #0d1117;
-        border: 1px solid #30363d;
-        border-radius: 6px;
-        overflow: hidden;
-      }
-      .table-card-header {
-        padding: 8px 12px;
-        font-size: 12px;
-        font-weight: 600;
-        background: #1c2128;
-        border-bottom: 1px solid #30363d;
-        cursor: pointer;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        user-select: none;
-      }
-      .table-card-header .badge {
-        font-size: 10px;
-        font-weight: 400;
-        color: #8b949e;
-      }
-      .table-card-body {
-        padding: 4px 0;
-      }
-      .table-card-body.collapsed {
-        display: none;
-      }
-      .schema-col {
-        padding: 4px 12px;
-        font-size: 11px;
-        font-family: "JetBrains Mono", "Consolas", monospace;
-        display: flex;
-        gap: 6px;
-        align-items: center;
-      }
-      .schema-col.pk {
-        background: #0d2817;
-      }
-      .schema-col .col-name {
-        color: #79c0ff;
-      }
-      .schema-col .col-type {
-        color: #8b949e;
-      }
-      .schema-col .col-pk {
-        color: #7ee787;
-        font-size: 9px;
-      }
-      .schema-col .col-fk {
-        color: #d2a8ff;
-        font-size: 9px;
-      }
-      .schema-fk {
-        padding: 4px 12px 4px 24px;
-        font-size: 11px;
-        font-family: "JetBrains Mono", "Consolas", monospace;
-        color: #d2a8ff;
-        background: #1c1128;
-      }
-
-      /* Mermaid ER diagram */
-      .er-container {
-        padding: 16px;
-      }
-      .er-container svg {
-        max-width: 100%;
-        height: auto;
-      }
-
-      /* ─── Main content ───────────────────────────────── */
-      .main {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        min-width: 0;
-      }
-      .version-badge {
-        position: fixed;
-        bottom: 8px;
-        right: 12px;
-        padding: 3px 10px;
-        font-size: 11px;
-        font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
-        color: #8b949e;
-        background: #161b22;
-        border: 1px solid #30363d;
-        border-radius: 6px;
-        z-index: 1000;
-        cursor: default;
-        user-select: none;
-        opacity: 0.7;
-        transition: opacity 0.2s;
-      }
-      .version-badge:hover {
-        opacity: 1;
-      }
-      .topbar {
-        padding: 10px 24px;
-        border-bottom: 1px solid #30363d;
-        background: #161b22;
-      }
-      .topbar-row {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
-      }
-      .topbar-row + .topbar-row {
-        margin-top: 6px;
-      }
-      .topbar h2 {
-        font-size: 15px;
-        font-weight: 600;
-        flex: 1;
-        min-width: 150px;
-      }
-      .db-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 3px 10px;
-        font-size: 11px;
-        background: #1c2128;
-        border: 1px solid #30363d;
-        border-radius: 4px;
-        color: #58a6ff;
-      }
-      .db-badge.custom {
-        color: #d2a8ff;
-        border-color: #563d7c;
-        background: #1c1128;
-      }
-      .tab-btn {
-        padding: 6px 14px;
-        font-size: 12px;
-        border: 1px solid #30363d;
-        background: #21262d;
-        color: #c9d1d9;
-        border-radius: 6px;
-        cursor: pointer;
-        transition: all 0.1s;
-      }
-      .tab-btn.active {
-        background: #1f6feb;
-        border-color: #1f6feb;
-        color: #fff;
-      }
-      .tab-btn:hover {
-        background: #30363d;
-      }
-      .tab-btn.active:hover {
-        background: #388bfd;
-      }
-
-      .content {
-        flex: 1;
-        overflow-y: auto;
-        padding: 24px;
-      }
-
-      /* Question */
-      .question {
-        background: #161b22;
-        border: 1px solid #30363d;
-        border-radius: 8px;
-        padding: 20px;
-        margin-bottom: 16px;
-      }
-      .question h3 {
-        font-size: 14px;
-        font-weight: 600;
-        margin-bottom: 8px;
-        color: #f0f6fc;
-      }
-      .question p {
-        font-size: 14px;
-        line-height: 1.6;
-        color: #c9d1d9;
-      }
-      .question .tables {
-        margin-top: 8px;
-        font-size: 12px;
-        color: #8b949e;
-      }
-      .question .tables span {
-        display: inline-block;
-        background: #1c2128;
-        padding: 2px 8px;
-        border-radius: 4px;
-        margin-right: 4px;
-        font-family: monospace;
-        color: #58a6ff;
-      }
-
-      /* SQL Editor — CodeMirror overrides */
-      .sql-section {
-        margin-bottom: 12px;
-        border: 1px solid #30363d;
-        border-radius: 8px;
-        overflow: hidden;
-      }
-      .sql-section .CodeMirror {
-        height: auto;
-        min-height: 120px;
-        font-size: 13px;
-        line-height: 1.5;
-        padding: 4px 0;
-      }
-      .sql-section .CodeMirror-scroll {
-        min-height: 120px;
-      }
-      .sql-actions {
-        display: flex;
-        gap: 8px;
-        padding: 8px 12px;
-        background: #161b22;
-        border-top: 1px solid #30363d;
-        align-items: center;
-      }
-      .btn {
-        padding: 8px 20px;
-        font-size: 13px;
-        font-weight: 500;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        transition: all 0.1s;
-      }
-      .btn-primary {
-        background: #238636;
-        color: #fff;
-      }
-      .btn-primary:hover {
-        background: #2ea043;
-      }
-      .btn-primary:disabled {
-        opacity: 0.4;
-        cursor: not-allowed;
-      }
-      .btn-secondary {
-        background: #21262d;
-        color: #c9d1d9;
-        border: 1px solid #30363d;
-      }
-      .btn-secondary:hover {
-        background: #30363d;
-      }
-      .btn-link {
-        background: none;
-        color: #58a6ff;
-        border: none;
-        padding: 8px 12px;
-        font-size: 12px;
-        cursor: pointer;
-      }
-      .btn-link:hover {
-        text-decoration: underline;
-      }
-      .btn-danger {
-        background: #8b3a3a;
-        color: #fff;
-        border: 1px solid #8b3a3a;
-      }
-      .btn-danger:hover {
-        background: #a84545;
-      }
-
-      /* Modal */
-      .modal-overlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.6);
-        display: none;
-        align-items: center;
-        justify-content: center;
-        z-index: 100;
-      }
-      .modal-overlay.open {
-        display: flex;
-      }
-      .modal {
-        background: #161b22;
-        border: 1px solid #30363d;
-        border-radius: 10px;
-        padding: 24px;
-        width: 90%;
-        max-width: 700px;
-        max-height: 80vh;
-        overflow-y: auto;
-      }
-      .modal h3 {
-        font-size: 14px;
-        font-weight: 600;
-        margin-bottom: 12px;
-      }
-      .modal textarea {
-        width: 100%;
-        min-height: 200px;
-        background: #0d1117;
-        border: 1px solid #30363d;
-        border-radius: 6px;
-        padding: 12px;
-        font-family: "JetBrains Mono", "Consolas", monospace;
-        font-size: 12px;
-        color: #e6edf3;
-        resize: vertical;
-      }
-      .modal textarea:focus {
-        outline: none;
-        border-color: #58a6ff;
-      }
-      .modal .field {
-        margin-bottom: 12px;
-      }
-      .modal .field label {
-        display: block;
-        font-size: 12px;
-        font-weight: 500;
-        color: #8b949e;
-        margin-bottom: 4px;
-      }
-      .modal .field input {
-        width: 100%;
-        padding: 8px 10px;
-        background: #0d1117;
-        border: 1px solid #30363d;
-        border-radius: 6px;
-        color: #e6edf3;
-        font-size: 13px;
-      }
-      .modal .field input:focus {
-        outline: none;
-        border-color: #58a6ff;
-      }
-      .modal-actions {
-        display: flex;
-        gap: 8px;
-        margin-top: 16px;
-        align-items: center;
-      }
-      .modal-error {
-        color: #ff7b72;
-        font-size: 12px;
-        margin-top: 8px;
-      }
-      .or-divider {
-        text-align: center;
-        color: #8b949e;
-        font-size: 11px;
-        margin: 8px 0;
-      }
-      .status {
-        font-size: 12px;
-        color: #8b949e;
-        margin-left: 8px;
-      }
-
-      /* Results */
-      .results {
-        margin-top: 12px;
-      }
-      .result-box {
-        background: #161b22;
-        border: 1px solid #30363d;
-        border-radius: 8px;
-        overflow: hidden;
-        margin-top: 8px;
-      }
-      .result-box:first-child {
-        margin-top: 0;
-      }
-      .result-header {
-        padding: 10px 16px;
-        font-size: 12px;
-        font-weight: 600;
-        border-bottom: 1px solid #30363d;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-      .result-header.pass {
-        background: #0d2817;
-        color: #7ee787;
-        border-bottom-color: #1f6f31;
-      }
-      .result-header.fail {
-        background: #280d0d;
-        color: #ff7b72;
-        border-bottom-color: #8b3a3a;
-      }
-      .result-body {
-        overflow-x: auto;
-        max-height: 400px;
-        overflow-y: auto;
-      }
-      .result-body table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 12px;
-        font-family: "JetBrains Mono", "Consolas", monospace;
-      }
-      .result-body th {
-        background: #1c2128;
-        color: #8b949e;
-        font-weight: 500;
-        text-align: left;
-        padding: 8px 12px;
-        border-bottom: 1px solid #30363d;
-        white-space: nowrap;
-        position: sticky;
-        top: 0;
-      }
-      .result-body td {
-        padding: 6px 12px;
-        border-bottom: 1px solid #1c2128;
-        color: #c9d1d9;
-        white-space: nowrap;
-      }
-      .result-body tr:hover td {
-        background: #1c2128;
-      }
-
-      .issues {
-        margin-top: 8px;
-        padding: 12px 16px;
-        background: #280d0d;
-        border: 1px solid #8b3a3a;
-        border-radius: 8px;
-        font-size: 13px;
-        line-height: 1.6;
-      }
-      .issues li {
-        color: #ff7b72;
-        margin-left: 16px;
-      }
-      .hint {
-        margin-top: 8px;
-        padding: 10px 14px;
-        background: #1c2128;
-        border: 1px solid #9e6a03;
-        border-radius: 6px;
-        font-size: 13px;
-        color: #d29922;
-      }
-
-      .solution {
-        margin-top: 8px;
-        background: #161b22;
-        border: 1px solid #30363d;
-        border-radius: 8px;
-        overflow: hidden;
-      }
-      .solution-header {
-        padding: 8px 12px;
-        font-size: 12px;
-        font-weight: 600;
-        background: #1c2128;
-        border-bottom: 1px solid #30363d;
-        color: #8b949e;
-        cursor: pointer;
-        user-select: none;
-      }
-      .solution-body {
-        padding: 12px;
-        font-family: "JetBrains Mono", "Consolas", monospace;
-        font-size: 13px;
-        line-height: 1.5;
-        color: #7ee787;
-        white-space: pre-wrap;
-        display: none;
-      }
-      .solution-body.open {
-        display: block;
-      }
-
-      .sandbox-note {
-        color: #8b949e;
-        font-size: 12px;
-        margin-bottom: 8px;
-      }
-    </style>
+    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <!--------------------------------------------------------------------------------
@@ -762,36 +134,175 @@
 
     <script>
       // ─── Globals ───────────────────────────────────────────────────────────────
+      let db = null;
       let exercises = [];
       let currentId = null;
       let currentMode = "practice";
       let schemaData = null;
       let cmEditor = null; // practice mode editor
       let cmSandbox = null; // sandbox mode editor
+      let activeDbName = "Unilever Product Management";
+      let activeDbId = "unilever";
+      let allExerciseDefs = [];
+
+      // ─── SQL.js helpers ────────────────────────────────────────────────────────
+      function runQuery(sql) {
+        try {
+          const results = db.exec(sql);
+          if (!results || results.length === 0)
+            return { ok: true, cols: [], rows: [], rowCount: 0 };
+          const cols = results[0].columns;
+          const rows = results[0].values.map((v) => {
+            const row = {};
+            cols.forEach((c, i) => {
+              row[c] = v[i];
+            });
+            return row;
+          });
+          return { ok: true, cols, rows, rowCount: rows.length };
+        } catch (err) {
+          return { ok: false, error: err.message };
+        }
+      }
+
+      function getSchema() {
+        const tables = {};
+        const tableRows = db.exec(
+          "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name",
+        );
+        if (!tableRows || tableRows.length === 0) return tables;
+        const tableNames = tableRows[0].values.map((v) => v[0]);
+        for (const t of tableNames) {
+          const colResult = db.exec("PRAGMA table_info('" + t + "')");
+          const cols = colResult[0].values.map((v) => ({
+            name: v[1],
+            type: v[2],
+            pk: !!v[5],
+            notnull: !!v[3],
+            default: v[4],
+          }));
+          const fkResult = db.exec("PRAGMA foreign_key_list('" + t + "')");
+          const fks =
+            fkResult && fkResult.length
+              ? fkResult[0].values.map((v) => ({
+                  from: v[3],
+                  table: v[2],
+                  to: v[4],
+                }))
+              : [];
+          tables[t] = { columns: cols, foreignKeys: fks };
+        }
+        return tables;
+      }
+
+      function normalizeValue(v) {
+        if (v === null || v === undefined) return "";
+        if (typeof v === "number")
+          return String(Math.round(v * 1e9) / 1e9);
+        return String(v).trim();
+      }
+
+      function compareResults(user, ref) {
+        const issues = [];
+        if (!user.ok) {
+          return { pass: false, issues: ["Query failed: " + user.error] };
+        }
+        if (!ref.ok) {
+          return {
+            pass: false,
+            issues: ["Reference query failed: " + ref.error],
+          };
+        }
+        if (user.cols.length !== ref.cols.length) {
+          issues.push(
+            "Expected " +
+              ref.cols.length +
+              " column(s) [" +
+              ref.cols.join(", ") +
+              "], got " +
+              user.cols.length +
+              " [" +
+              user.cols.join(", ") +
+              "]",
+          );
+        }
+        const userLower = user.cols.map((c) => c.toLowerCase());
+        const refLower = ref.cols.map((c) => c.toLowerCase());
+        for (
+          let i = 0;
+          i < Math.min(user.cols.length, ref.cols.length);
+          i++
+        ) {
+          if (userLower[i] !== refLower[i]) {
+            issues.push(
+              'Column ' +
+                (i + 1) +
+                ': expected "' +
+                ref.cols[i] +
+                '", got "' +
+                user.cols[i] +
+                '"',
+            );
+          }
+        }
+        if (user.rowCount !== ref.rowCount) {
+          issues.push(
+            "Expected " + ref.rowCount + " row(s), got " + user.rowCount,
+          );
+        }
+        const colCount = Math.min(user.cols.length, ref.cols.length);
+        const userSet = new Set(
+          user.rows.map((r) =>
+            user.cols
+              .slice(0, colCount)
+              .map((c) => normalizeValue(r[c]))
+              .join("||"),
+          ),
+        );
+        const refSet = new Set(
+          ref.rows.map((r) =>
+            ref.cols
+              .slice(0, colCount)
+              .map((c) => normalizeValue(r[c]))
+              .join("||"),
+          ),
+        );
+        const missing = [...refSet].filter((k) => !userSet.has(k));
+        const extra = [...userSet].filter((k) => !refSet.has(k));
+        if (missing.length > 0 || extra.length > 0) {
+          issues.push(
+            missing.length +
+              " missing row(s), " +
+              extra.length +
+              " extra row(s)",
+          );
+        }
+        return { pass: issues.length === 0, issues };
+      }
 
       // ─── Sidebar tabs ─────────────────────────────────────────────────────────
       function showSidebar(panel) {
-        document
-          .querySelectorAll(".sidebar-tab")
-          .forEach((t) =>
-            t.classList.toggle("active", t.dataset.panel === panel),
-          );
-        document
-          .querySelectorAll(".sidebar-panel")
-          .forEach((p) =>
-            p.classList.toggle("active", p.id === "panel-" + panel),
-          );
+        document.querySelectorAll(".sidebar-tab").forEach((t) =>
+          t.classList.toggle("active", t.dataset.panel === panel),
+        );
+        document.querySelectorAll(".sidebar-panel").forEach((p) =>
+          p.classList.toggle("active", p.id === "panel-" + panel),
+        );
       }
 
       // ─── Load exercises ────────────────────────────────────────────────────────
-      async function loadExercises() {
-        const res = await fetch("/api/exercises");
-        exercises = await res.json();
-        if (exercises.length === 0) {
+      function loadExercises() {
+        if (activeDbId !== "unilever") {
+          exercises = [];
           document.getElementById("exerciseList").innerHTML =
             '<div style="padding:20px;text-align:center;color:#8b949e;font-size:13px">📭 No exercises for this database.<br>Switch to <a href="#" onclick="switchMode(\'sandbox\');return false" style="color:#58a6ff">Sandbox mode</a> to run your own queries.</div>';
           return;
         }
+        exercises = allExerciseDefs.map((e) => ({
+          id: e.id,
+          title: e.title,
+          difficulty: e.difficulty,
+        }));
         document.getElementById("exerciseList").innerHTML = exercises
           .map(
             (e) =>
@@ -807,7 +318,9 @@
         currentId = id;
         document
           .querySelectorAll(".exercise-item")
-          .forEach((el) => el.classList.toggle("active", el.dataset.id === id));
+          .forEach((el) =>
+            el.classList.toggle("active", el.dataset.id === id),
+          );
         if (currentMode === "practice") loadPractice(id);
         else loadSandbox();
       }
@@ -825,7 +338,7 @@
         else if (currentId) loadPractice(currentId);
         else {
           document.getElementById("mainContent").innerHTML =
-            `<div class="question" style="text-align:center;color:#8b949e;padding:60px 20px;"><h3>👈 Select an exercise</h3></div>`;
+            '<div class="question" style="text-align:center;color:#8b949e;padding:60px 20px;"><h3>👈 Select an exercise</h3></div>';
         }
       }
 
@@ -849,11 +362,10 @@
           },
           hintOptions: {
             completeSingle: false,
-            tables: {}, // will be populated from schema
+            tables: {},
           },
         });
 
-        // Recalculate size on content change
         editor.on("change", () => {
           editor.setSize(
             null,
@@ -861,9 +373,11 @@
           );
         });
 
-        // Trigger autocomplete on certain characters
         editor.on("inputRead", (cm, change) => {
-          if (change.text.length === 1 && /[a-zA-Z._]/.test(change.text[0])) {
+          if (
+            change.text.length === 1 &&
+            /[a-zA-Z._]/.test(change.text[0])
+          ) {
             CodeMirror.commands.autocomplete(cm, null, {
               completeSingle: false,
             });
@@ -879,23 +393,31 @@
 
       function setEditorValue(editor, val) {
         editor.setValue(val || "");
-        editor.setSize(null, Math.max(120, editor.getScrollInfo().height + 10));
+        editor.setSize(
+          null,
+          Math.max(120, editor.getScrollInfo().height + 10),
+        );
         editor.focus();
       }
 
       // ─── Load Schema into autocomplete hints ───────────────────────────────────
-      async function loadSchemaData() {
-        const res = await fetch("/api/schema");
-        schemaData = await res.json();
-
-        // Build tables object for CodeMirror sql-hint
-        const tables = {};
-        for (const [name, info] of Object.entries(schemaData)) {
-          tables[name] = info.columns.map((c) => c.name);
+      function loadSchemaData() {
+        if (schemaData) {
+          refreshEditorHints();
+          return;
         }
+        schemaData = getSchema();
+        refreshEditorHints();
+      }
 
+      function refreshEditorHints() {
+        const tables = {};
+        if (schemaData) {
+          for (const [name, info] of Object.entries(schemaData)) {
+            tables[name] = info.columns.map((c) => c.name);
+          }
+        }
         const hintCfg = { tables, completeSingle: false };
-
         if (cmEditor) cmEditor.setOption("hintOptions", hintCfg);
         if (cmSandbox) cmSandbox.setOption("hintOptions", hintCfg);
       }
@@ -923,7 +445,9 @@
         for (const t of tableOrder) {
           const info = schemaData[t];
           if (!info) continue;
-          const pkNames = info.columns.filter((c) => c.pk).map((c) => c.name);
+          const pkNames = info.columns
+            .filter((c) => c.pk)
+            .map((c) => c.name);
           const pkStr = pkNames.join(", ");
 
           html += `<div class="table-card">
@@ -935,11 +459,25 @@
 
           for (const c of info.columns) {
             html += `<div class="schema-col${c.pk ? " pk" : ""}">
-        ${c.pk ? '<span class="col-pk">🔑</span>' : '<span style="color:#30363d">·</span>'}
+        ${
+          c.pk
+            ? '<span class="col-pk">🔑</span>'
+            : '<span style="color:#30363d">·</span>'
+        }
         <span class="col-name">${c.name}</span>
         <span class="col-type">${c.type.toLowerCase()}</span>
-        ${c.notnull ? '<span style="color:#f0883e;font-size:9px">NOT NULL</span>' : ""}
-        ${c.default ? '<span style="color:#8b949e;font-size:9px">DEFAULT ' + c.default + "</span>" : ""}
+        ${
+          c.notnull
+            ? '<span style="color:#f0883e;font-size:9px">NOT NULL</span>'
+            : ""
+        }
+        ${
+          c.default
+            ? '<span style="color:#8b949e;font-size:9px">DEFAULT ' +
+              c.default +
+              "</span>"
+            : ""
+        }
       </div>`;
           }
 
@@ -959,10 +497,8 @@
         if (!schemaData) return;
         const container = document.getElementById("mermaidContainer");
 
-        // Auto-generate from actual DB schema — no hardcoded relationships
         let mmd = "erDiagram\n";
 
-        // Table definitions with columns (auto-detect PK/FK tags)
         for (const [name, info] of Object.entries(schemaData)) {
           mmd += `  ${name} {\n`;
           for (const c of info.columns) {
@@ -977,7 +513,6 @@
           mmd += "  }\n";
         }
 
-        // Relationships: FK in child references parent → PARENT ||--o{ CHILD
         mmd += "\n";
         for (const [name, info] of Object.entries(schemaData)) {
           for (const fk of info.foreignKeys) {
@@ -990,7 +525,6 @@
           mmd.replace(/</g, "&lt;") +
           "</div>";
 
-        // mermaid.run() returns a Promise — use .catch() for proper error handling
         const el = container.querySelector(".mermaid");
         if (el) {
           mermaid.run({ nodes: [el] }).catch((e) => {
@@ -1010,23 +544,26 @@
           );
         document
           .querySelectorAll(".schema-view")
-          .forEach((s) => s.classList.toggle("active", s.id === "sv-" + view));
+          .forEach(
+            (s) => s.classList.toggle("active", s.id === "sv-" + view),
+          );
         if (view === "er" && schemaData) {
           setTimeout(() => renderERDiagram(), 100);
         }
       }
 
-      async function loadSchema() {
+      function loadSchema() {
         if (!schemaData) {
-          await loadSchemaData();
+          schemaData = getSchema();
           renderTableCards();
+          refreshEditorHints();
         }
       }
 
       // ─── Practice Mode ─────────────────────────────────────────────────────────
-      async function loadPractice(id) {
-        const res = await fetch(`/api/exercises/${id}`);
-        const ex = await res.json();
+      function loadPractice(id) {
+        const ex = allExerciseDefs.find((e) => e.id === id);
+        if (!ex) return;
         document.getElementById("mainTitle").textContent = ex.title;
 
         const content = document.getElementById("mainContent");
@@ -1034,7 +571,9 @@
     <div class="question">
       <h3>📋 Question</h3>
       <p>${ex.question}</p>
-      <div class="tables">Tables: ${ex.tables.map((t) => "<span>" + t + "</span>").join("")}</div>
+      <div class="tables">Tables: ${ex.tables
+        .map((t) => "<span>" + t + "</span>")
+        .join("")}</div>
     </div>
     <div class="sql-section" id="editorContainer">
       <div class="sql-actions">
@@ -1046,14 +585,12 @@
     </div>
     <div id="results"></div>`;
 
-        // Create CodeMirror
         if (cmEditor) {
           cmEditor.toTextArea();
           cmEditor = null;
         }
         const last = sessionStorage.getItem("lastQuery_" + id) || "";
         cmEditor = createEditor("editorContainer", last);
-        // Move editor before actions
         const actions = content.querySelector(".sql-actions");
         content
           .querySelector("#editorContainer")
@@ -1062,7 +599,6 @@
             actions,
           );
 
-        // Wire Ctrl+Enter
         cmEditor.setOption("extraKeys", {
           "Ctrl-Space": "autocomplete",
           "Ctrl-Enter": () => runJudge(),
@@ -1134,33 +670,51 @@
         for (const [name, info] of Object.entries(schemaData)) {
           tables[name] = info.columns.map((c) => c.name);
           tables[name.toLowerCase()] = info.columns.map((c) => c.name);
-          if (name.length >= 3) {
-          }
         }
         return tables;
       }
 
-      // ─── Judge ─────────────────────────────────────────────────────────────────
-      async function runJudge() {
+      // ─── Judge (client-side) ───────────────────────────────────────────────────
+      function runJudge() {
         const query = getEditorValue(cmEditor);
         if (!query) return;
         sessionStorage.setItem("lastQuery_" + currentId, query);
+
+        const ex = allExerciseDefs.find((e) => e.id === currentId);
+        if (!ex) return;
+
         const btn = document.getElementById("runBtn");
         const status = document.getElementById("status");
         btn.disabled = true;
         status.textContent = "⏳ Running...";
-        try {
-          const res = await fetch("/api/judge/" + currentId, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ query }),
+
+        setTimeout(() => {
+          const user = runQuery(query);
+          const ref = runQuery(ex.solution);
+          const result = compareResults(user, ref);
+          renderJudgeResults({
+            pass: result.pass,
+            issues: result.issues,
+            user: user.ok
+              ? {
+                  cols: user.cols,
+                  rows: user.rows.slice(0, 50),
+                  rowCount: user.rowCount,
+                }
+              : { error: user.error },
+            ref: ref.ok
+              ? {
+                  cols: ref.cols,
+                  rows: ref.rows.slice(0, 50),
+                  rowCount: ref.rowCount,
+                }
+              : null,
+            solution: ex.solution,
+            hint: ex.hint || null,
           });
-          renderJudgeResults(await res.json());
-        } catch (e) {
-          status.textContent = "❌ Network error";
-        }
-        btn.disabled = false;
-        status.textContent = "";
+          btn.disabled = false;
+          status.textContent = "";
+        }, 50);
       }
 
       function renderJudgeResults(data) {
@@ -1171,7 +725,9 @@
           html += `<div class="result-box"><div class="result-header pass">✅ PASS — Your query is correct!</div></div>`;
         } else {
           html += `<div class="result-box"><div class="result-header fail">❌ FAIL — ${data.issues.length} issue(s)</div>`;
-          html += `<div class="issues"><ul>${data.issues.map((i) => "<li>" + escHtml(i) + "</li>").join("")}</ul></div>`;
+          html += `<div class="issues"><ul>${data.issues
+            .map((i) => "<li>" + escHtml(i) + "</li>")
+            .join("")}</ul></div>`;
           if (data.hint)
             html += `<div class="hint">💡 ${escHtml(data.hint)}</div>`;
           html += `</div>`;
@@ -1207,49 +763,40 @@
       }
 
       // ─── Sandbox query ─────────────────────────────────────────────────────────
-      async function runSandbox() {
+      function runSandbox() {
         const query = getEditorValue(cmSandbox);
         if (!query) return;
         const btn = document.getElementById("sandboxRunBtn");
         const status = document.getElementById("sandboxStatus");
         btn.disabled = true;
         status.textContent = "⏳ Running...";
-        try {
-          const res = await fetch("/api/query", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ query }),
-          });
-          const data = await res.json();
-          if (data.ok) {
+
+        setTimeout(() => {
+          const result = runQuery(query);
+          if (result.ok) {
             document.getElementById("sandboxResults").innerHTML = resultTable(
-              "📊 " + data.rowCount + " row(s)",
-              data.cols,
-              data.rows,
-              data.rowCount,
+              "📊 " + result.rowCount + " row(s)",
+              result.cols,
+              result.rows,
+              result.rowCount,
             );
           } else {
             document.getElementById("sandboxResults").innerHTML =
-              `<div class="result-box"><div class="result-header fail">⚠️ ${escHtml(data.error)}</div></div>`;
+              `<div class="result-box"><div class="result-header fail">⚠️ ${escHtml(result.error)}</div></div>`;
           }
-        } catch (e) {
-          status.textContent = "❌ Network error";
-        }
-        btn.disabled = false;
-        status.textContent = "";
+          btn.disabled = false;
+          status.textContent = "";
+        }, 50);
       }
 
-      // ─── Database management ────────────────────────────────────────────────────
+      // ─── Database management (client-side) ─────────────────────────────────────
 
-      async function loadDbStatus() {
-        const res = await fetch("/api/db-status");
-        const st = await res.json();
-        document.getElementById("dbName").textContent = st.name;
+      function updateDbStatusUI() {
+        document.getElementById("dbName").textContent = activeDbName;
         document.getElementById("dbBadge").className =
-          "db-badge" + (st.dbId === "custom" ? " custom" : "");
+          "db-badge" + (activeDbId === "custom" ? " custom" : "");
         document.getElementById("resetBtn").style.display =
-          st.dbId === "custom" ? "" : "none";
-        return st;
+          activeDbId === "custom" ? "" : "none";
       }
 
       function showLoadSqlModal() {
@@ -1278,7 +825,7 @@
         document.getElementById("sqlModal").classList.remove("open");
       }
 
-      async function loadSqlFromText() {
+      function loadSqlFromText() {
         const sql = document.getElementById("sqlText").value.trim();
         if (!sql) {
           document.getElementById("loadSqlError").textContent =
@@ -1295,51 +842,55 @@
         btn.disabled = true;
         status.textContent = "⏳ Loading...";
 
-        try {
-          const res = await fetch("/api/load-sql", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ sql, name }),
-          });
-          const data = await res.json();
-          if (data.error) {
-            errorEl.textContent = data.error;
-            status.textContent = "";
-            btn.disabled = false;
-            return;
+        setTimeout(() => {
+          try {
+            const newDb = new SQL.Database();
+            newDb.run("PRAGMA foreign_keys = ON");
+            newDb.run(sql);
+            db = newDb;
+            activeDbName = name;
+            activeDbId = "custom";
+
+            closeLoadSqlModal();
+            schemaData = null;
+            cmEditor = null;
+            cmSandbox = null;
+            currentId = null;
+            updateDbStatusUI();
+
+            const content = document.getElementById("mainContent");
+            content.innerHTML =
+              '<div class="question" style="text-align:center;color:#8b949e;padding:60px 20px;"><h3>✅ Database loaded: ' +
+              escHtml(name) +
+              '</h3><p style="margin-top:8px;font-size:13px;color:#8b949e">Use Sandbox mode to run queries.</p></div>';
+            document.getElementById("mainTitle").textContent = name;
+            document
+              .querySelectorAll(".exercise-item")
+              .forEach((el) => el.classList.remove("active"));
+            schemaData = getSchema();
+            loadExercises();
+            renderTableCards();
+            refreshEditorHints();
+          } catch (e) {
+            errorEl.textContent = "SQL error: " + e.message;
           }
-          closeLoadSqlModal();
-          await loadDbStatus();
-          schemaData = null;
-          cmEditor = null;
-          cmSandbox = null;
-          currentId = null;
-          document.getElementById("mainContent").innerHTML =
-            '<div class="question" style="text-align:center;color:#8b949e;padding:60px 20px;"><h3>✅ Database loaded: ' +
-            escHtml(data.name) +
-            '</h3><p style="margin-top:8px;font-size:13px;color:#8b949e">Use Sandbox mode to run queries.</p></div>';
-          document.getElementById("mainTitle").textContent = data.name;
-          document
-            .querySelectorAll(".exercise-item")
-            .forEach((el) => el.classList.remove("active"));
-          await loadExercises();
-          await loadSchemaData();
-          renderTableCards();
-        } catch (e) {
-          errorEl.textContent = "Network error: " + e.message;
+          btn.disabled = false;
           status.textContent = "";
-        }
-        btn.disabled = false;
+        }, 50);
       }
 
       async function resetDatabase() {
-        const res = await fetch("/api/reset", { method: "POST" });
-        const data = await res.json();
-        await loadDbStatus();
+        const res = await fetch("Unilever_Product_Management.db");
+        const buffer = await res.arrayBuffer();
+        db = new SQL.Database(new Uint8Array(buffer));
+        activeDbName = "Unilever Product Management";
+        activeDbId = "unilever";
+
         schemaData = null;
         cmEditor = null;
         cmSandbox = null;
         currentId = null;
+        updateDbStatusUI();
         document.getElementById("mainTitle").textContent =
           "Unilever Product Management";
         document.getElementById("mainContent").innerHTML =
@@ -1347,9 +898,10 @@
         document
           .querySelectorAll(".exercise-item")
           .forEach((el) => el.classList.remove("active"));
-        await loadExercises();
-        await loadSchemaData();
+        schemaData = getSchema();
+        loadExercises();
         renderTableCards();
+        refreshEditorHints();
       }
 
       // ─── Helpers ───────────────────────────────────────────────────────────────
@@ -1388,20 +940,42 @@
       // ─── Init ──────────────────────────────────────────────────────────────────
       mermaid.initialize({ theme: "dark", startOnLoad: false });
 
-      async function loadVersion() {
+      async function init() {
+        // Load exercises JSON
         try {
-          const res = await fetch("/api/version");
-          const data = await res.json();
-          document.getElementById("versionBadge").textContent = "v" + data.version;
+          const exRes = await fetch("exercises/exercises.json");
+          allExerciseDefs = await exRes.json();
         } catch {}
+
+        // Load version
+        try {
+          const vRes = await fetch("VERSION");
+          const vText = await vRes.text();
+          document.getElementById("versionBadge").textContent =
+            "v" + vText.trim();
+        } catch {}
+
+        // Load default database from binary .db file
+        try {
+          const dbRes = await fetch("Unilever_Product_Management.db");
+          const dbBuffer = await dbRes.arrayBuffer();
+          db = new SQL.Database(new Uint8Array(dbBuffer));
+        } catch (e) {
+          document.getElementById("mainContent").innerHTML =
+            '<div class="question" style="text-align:center;color:#ff7b72;padding:60px 20px;"><h3>❌ Failed to load database: ' +
+            escHtml(e.message) +
+            "</h3></div>";
+          return;
+        }
+
+        updateDbStatusUI();
+        schemaData = getSchema();
+        renderTableCards();
+        loadExercises();
+        refreshEditorHints();
       }
 
-      loadVersion();
-      loadDbStatus();
-      loadExercises();
-      loadSchemaData().then(() => {
-        renderTableCards();
-      });
+      init();
     </script>
 
     <!-- Modal: Load SQL -->
