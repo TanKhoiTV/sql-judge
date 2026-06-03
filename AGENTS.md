@@ -6,7 +6,8 @@ Fully **client-side** SQL practice judge. No server required.
 
 ```
 public/                     # Web app (http-server serves this directory)
-├── index.html              # Main page (HTML + JS)
+├── index.html              # Main page (HTML structure, no inline JS)
+├── app.js                  # Compiled JS (from src/app.ts via esbuild)
 ├── style.css               # All styles
 ├── db/
 │   └── Unilever_Product_Management.db   # Pre-built SQLite database (asset)
@@ -14,22 +15,30 @@ public/                     # Web app (http-server serves this directory)
 │   └── exercises.json      # Exercise definitions
 └── VERSION                 # Version displayed in UI
 
-scripts/                    # Development/CI helper scripts
-├── create_db.js            # Rebuild the .db from the .sql script
+src/                        # TypeScript source
+└── app.ts                  # Browser app logic (compiled → public/app.js)
+
+scripts/                    # Development/CI helper scripts (TypeScript)
+├── create_db.ts            # Rebuild the .db from the .sql script
 └── Unilever_Product_Management.sqlite.sql  # SQLite schema + data + triggers
 
-judge.js                    # CLI judge (run from project root)
+judge.ts                    # CLI judge (run with tsx from project root)
+tsconfig.json               # TypeScript configuration
 VERSION                     # Canonical version (syncs with public/VERSION)
 ```
 
 - SQL executed in-browser via **sql.js** (SQLite compiled to WASM)
 - Assets (`.db`, exercises, VERSION) fetched statically by the browser
+- TypeScript compiled to JS via esbuild (no type-checking at compile time)
+- Node.js scripts run directly via tsx
 
 ## Running
 
 ```bash
-npm start     # http-server on port 3000, serves public/
-# or open public/index.html directly
+npm run build   # Compile src/app.ts → public/app.js
+npm start       # Build + serve on port 3000
+npm run dev     # Serve only (no build, assumes app.js is up to date)
+npm test        # Run CLI judge (npx tsx judge.ts)
 ```
 
 ## Versioning

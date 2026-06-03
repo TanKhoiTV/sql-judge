@@ -1,145 +1,33 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SQL Judge — Practice SQL</title>
+      // ─── Type declarations for CDN globals ─────────────────────────────────────
+      declare function initSqlJs(opts?: {
+        locateFile?: (file: string) => string;
+      }): Promise<any>;
 
-    <!-- CodeMirror 5 — editor + syntax highlighting + autocomplete -->
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.css"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/theme/dracula.min.css"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/hint/show-hint.min.css"
-    />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/sql/sql.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/hint/show-hint.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/hint/sql-hint.min.js"></script>
+      declare class CodeMirror {
+        static fromTextArea(
+          textarea: HTMLTextAreaElement,
+          options?: Record<string, any>,
+        ): any;
+        static commands: { autocomplete: (cm: any, ...args: any[]) => void };
+      }
 
-    <!-- SQL.js — client-side SQLite via WASM -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.11.0/sql-wasm.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+      declare var mermaid: {
+        initialize: (config: Record<string, any>) => void;
+        run: (opts: { nodes: Element[] }) => Promise<void>;
+      };
 
-    <link rel="stylesheet" href="style.css" />
-    <script src="app.js"></script>
-  </head>
-  <body>
-    <!--------------------------------------------------------------------------------
-  SIDEBAR
---------------------------------------------------------------------------------->
-    <div class="sidebar">
-      <div class="sidebar-tabs">
-        <div
-          class="sidebar-tab active"
-          data-panel="exercises"
-          onclick="showSidebar('exercises')"
-        >
-          Exercises
-        </div>
-        <div
-          class="sidebar-tab"
-          data-panel="schema"
-          onclick="
-            showSidebar('schema');
-            loadSchema();
-          "
-        >
-          Schema
-        </div>
-      </div>
-
-      <!-- Exercises panel -->
-      <div class="sidebar-panel active" id="panel-exercises">
-        <div class="exercises" id="exerciseList"></div>
-      </div>
-
-      <!-- Schema panel -->
-      <div class="sidebar-panel" id="panel-schema">
-        <div class="schema-tabs">
-          <div
-            class="schema-tab active"
-            data-stab="cards"
-            onclick="showSchemaView('cards')"
-          >
-            🗂 Tables
-          </div>
-          <div class="schema-tab" data-stab="er" onclick="showSchemaView('er')">
-            🔗 ER Diagram
-          </div>
-        </div>
-        <div class="schema-view active" id="sv-cards"></div>
-        <div class="schema-view" id="sv-er">
-          <div class="er-container" id="mermaidContainer"></div>
-        </div>
-      </div>
-    </div>
-
-    <!--------------------------------------------------------------------------------
-  MAIN CONTENT
---------------------------------------------------------------------------------->
-    <div class="main">
-      <div class="topbar">
-        <div class="topbar-row">
-          <h2 id="mainTitle">Select an exercise</h2>
-          <button
-            class="tab-btn active"
-            id="tabPractice"
-            onclick="switchMode('practice')"
-          >
-            Practice
-          </button>
-          <button
-            class="tab-btn"
-            id="tabSandbox"
-            onclick="switchMode('sandbox')"
-          >
-            Sandbox
-          </button>
-        </div>
-        <div class="topbar-row">
-          <span class="db-badge" id="dbBadge"
-            >📁 <span id="dbName">Unilever Product Management</span></span
-          >
-          <button class="tab-btn" onclick="showLoadSqlModal()">
-            📄 Load SQL
-          </button>
-          <button
-            class="tab-btn"
-            id="resetBtn"
-            onclick="resetDatabase()"
-            style="display: none"
-          >
-            ↺ Reset
-          </button>
-        </div>
-      </div>
-      <div class="content" id="mainContent">
-        <div
-          class="question"
-          style="text-align: center; color: #8b949e; padding: 60px 20px"
-        >
-          <h3>👈 Select an exercise from the sidebar</h3>
-          <p style="margin-top: 8px; font-size: 13px">
-            Or switch to Sandbox mode to run any SQL query.
-          </p>
-        </div>
-      </div>
-    </div>
-
-
-      let schemaData = null;
-      let cmEditor = null; // practice mode editor
-      let cmSandbox = null; // sandbox mode editor
+      // ─── Globals ───────────────────────────────────────────────────────────────
+      let db: any = null;
+      let SQL: any = null;
+      let exercises: { id: string; title: string; difficulty: string }[] = [];
+      let currentId: string | null = null;
+      let currentMode: "practice" | "sandbox" = "practice";
+      let schemaData: Record<string, any> | null = null;
+      let cmEditor: any = null;
+      let cmSandbox: any = null;
       let activeDbName = "Unilever Product Management";
       let activeDbId = "unilever";
-      let allExerciseDefs = [];
+      let allExerciseDefs: any[] = [];
 
       // ─── SQL.js helpers ────────────────────────────────────────────────────────
       function runQuery(sql) {
@@ -795,7 +683,7 @@
           const file = this.files[0];
           if (!file) return;
           const reader = new FileReader();
-          reader.onload = function (e) {
+          reader.onload = (e) => {
             document.getElementById("sqlText").value = e.target.result;
             document.getElementById("loadSqlStatus").textContent =
               "📄 Loaded " + file.name;
@@ -941,11 +829,9 @@
         // Initialize sql.js (loads WASM from CDN)
         try {
           SQL = await initSqlJs({
-            locateFile: function (file) {
-              return (
+            locateFile: (file) => (
                 "https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.11.0/" + file
-              );
-            },
+              ),
           });
         } catch (e) {
           document.getElementById("mainContent").innerHTML =
@@ -975,56 +861,6 @@
         refreshEditorHints();
       }
 
-    <!-- Modal: Load SQL -->
-    <div
-      class="modal-overlay"
-      id="sqlModal"
-      onclick="if (event.target === this) closeLoadSqlModal();"
-    >
-      <div class="modal">
-        <h3>📄 Load SQLite Database</h3>
-        <p style="font-size: 12px; color: #8b949e; margin-bottom: 12px">
-          Paste a SQLite-compatible SQL script (.sql) or upload a file. Tables
-          and data will be loaded into a temporary database.
-        </p>
-
-        <div class="field">
-          <label>Database name (optional)</label>
-          <input type="text" id="sqlDbName" placeholder="Custom Database" />
-        </div>
-
-        <div class="field">
-          <label>SQL script</label>
-          <textarea
-            id="sqlText"
-            placeholder="CREATE TABLE ... ;&#10;INSERT INTO ... ;"
-          ></textarea>
-        </div>
-
-        <div class="or-divider">— or upload a .sql file —</div>
-
-        <div style="text-align: center; margin-bottom: 12px">
-          <input
-            type="file"
-            id="sqlFileInput"
-            accept=".sql,.txt"
-            style="font-size: 12px; color: #c9d1d9"
-          />
-        </div>
-
-        <div class="modal-actions">
-          <button class="btn btn-primary" onclick="loadSqlFromText()">
-            ▶ Load
-          </button>
-          <button class="btn btn-secondary" onclick="closeLoadSqlModal()">
-            Cancel
-          </button>
-          <span style="flex: 1"></span>
-          <span class="status" id="loadSqlStatus"></span>
-        </div>
-        <div class="modal-error" id="loadSqlError"></div>
-      </div>
-    </div>
-    <div class="version-badge" id="versionBadge">v0.0.0</div>
-  </body>
-</html>
+      init().catch((e) => {
+        console.error(e);
+      });
