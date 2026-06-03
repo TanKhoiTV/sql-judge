@@ -135,6 +135,7 @@
     <script>
       // ─── Globals ───────────────────────────────────────────────────────────────
       let db = null;
+      let SQL = null;
       let exercises = [];
       let currentId = null;
       let currentMode = "practice";
@@ -928,6 +929,17 @@
       mermaid.initialize({ theme: "dark", startOnLoad: false });
 
       async function init() {
+        // Initialize sql.js (loads WASM)
+        try {
+          SQL = await initSqlJs();
+        } catch (e) {
+          document.getElementById("mainContent").innerHTML =
+            '<div class="question" style="text-align:center;color:#ff7b72;padding:60px 20px;"><h3>❌ Failed to load SQL engine: ' +
+            escHtml(e.message) +
+            "</h3></div>";
+          return;
+        }
+
         // Load exercises JSON
         try {
           const exRes = await fetch("exercises/exercises.json");
@@ -962,7 +974,9 @@
         refreshEditorHints();
       }
 
-      init();
+      init().catch(function (e) {
+        console.error(e);
+      });
     </script>
 
     <!-- Modal: Load SQL -->
