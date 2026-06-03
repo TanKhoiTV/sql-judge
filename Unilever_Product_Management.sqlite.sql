@@ -1,108 +1,122 @@
 -- ============================================================================
 -- SQLite Version: Unilever Product Management Database
 -- Matches:       sample.sql (reference file) with SQLite-compatible types
+-- All integrity constraints per specification (section 1.1-1.11)
 -- ============================================================================
 
--- 1. NHOM_HANG
+-- 1.1 NHOM_HANG
+-- Spec: mỗi nhóm có một mã nhóm để phân biệt
 CREATE TABLE IF NOT EXISTS NHOM_HANG (
     MANHOM  TEXT PRIMARY KEY,
     TENNHOM TEXT NOT NULL
 );
 
--- 2. LOAI_NV
+-- 1.6 LOAI_NV
+-- Spec: các vai trò khác nhau được phân biệt bởi mã loại nhân viên
 CREATE TABLE IF NOT EXISTS LOAI_NV (
     MALNV   TEXT PRIMARY KEY,
     TENLOAI TEXT NOT NULL
 );
 
--- 3. HINH_THUC_DONG_GOI
+-- 1.3 HINH_THUC_DONG_GOI
+-- Spec: tối đa 4 cấp tính cho một loại hàng hóa, mỗi hàng hóa có một mã đóng gói
 CREATE TABLE IF NOT EXISTS HINH_THUC_DONG_GOI (
     MAHTDG TEXT PRIMARY KEY,
-    THUNG  INTEGER,
-    LOC    INTEGER
+    THUNG  INTEGER NOT NULL CHECK(THUNG > 0),
+    LOC    INTEGER CHECK(LOC >= 0)
 );
 
--- 4. DAI_LY
+-- 1.7 DAI_LY
+-- Spec: mỗi đại lý có một mã duy nhất, một mã số thuế
 CREATE TABLE IF NOT EXISTS DAI_LY (
     MADL      TEXT PRIMARY KEY,
     TENDL     TEXT NOT NULL,
-    MASOTHUE  TEXT,
+    MASOTHUE  TEXT NOT NULL UNIQUE,
     DIACHI    TEXT,
     DIENTHOAI TEXT
 );
 
--- 5. DOI
+-- 1.4 DOI
+-- Spec: công ty có 10 đội, mỗi đội phụ trách một nhóm hàng
 CREATE TABLE IF NOT EXISTS DOI (
     MADOI  TEXT PRIMARY KEY,
-    MANHOM TEXT,
+    MANHOM TEXT NOT NULL,
     FOREIGN KEY (MANHOM) REFERENCES NHOM_HANG(MANHOM)
 );
 
--- 6. HANG_HOA
+-- 1.2 HANG_HOA
+-- Spec: mỗi hàng hóa được đánh mã, có tên, đơn vị tính, đơn giá, số lượng tồn,
+--        được xếp vào một nhóm hàng, và có một mã đóng gói
 CREATE TABLE IF NOT EXISTS HANG_HOA (
     MAHH   TEXT PRIMARY KEY,
-    MAHTDG TEXT,
-    MANHOM TEXT,
+    MAHTDG TEXT NOT NULL,
+    MANHOM TEXT NOT NULL,
     TENHH  TEXT NOT NULL,
-    DVT    TEXT,
-    DONGIA REAL,
-    SLTON  INTEGER,
+    DVT    TEXT NOT NULL,
+    DONGIA REAL    NOT NULL CHECK(DONGIA > 0),
+    SLTON  INTEGER NOT NULL CHECK(SLTON >= 0),
     FOREIGN KEY (MAHTDG) REFERENCES HINH_THUC_DONG_GOI(MAHTDG),
     FOREIGN KEY (MANHOM) REFERENCES NHOM_HANG(MANHOM)
 );
 
--- 7. NHAN_VIEN
+-- 1.5 NHAN_VIEN
+-- Spec: mỗi nhân viên có mã, thuộc một loại NV, thuộc một đội, có họ tên, giới tính,
+--        năm sinh, địa chỉ, điện thoại, ngày vào làm
 CREATE TABLE IF NOT EXISTS NHAN_VIEN (
     MANV       TEXT PRIMARY KEY,
-    MALNV      TEXT,
-    MADOI      TEXT,
+    MALNV      TEXT NOT NULL,
+    MADOI      TEXT NOT NULL,
     HOTEN      TEXT NOT NULL,
-    GIOITINH   TEXT,
+    GIOITINH   TEXT NOT NULL CHECK(GIOITINH IN ('Nam', 'Nữ')),
     NAMSINH    TEXT,
     DIACHI     TEXT,
     DIENTHOAI  TEXT,
-    NGAYVAOLAM TEXT,
+    NGAYVAOLAM TEXT NOT NULL,
     GHICHU     TEXT,
     FOREIGN KEY (MALNV) REFERENCES LOAI_NV(MALNV),
     FOREIGN KEY (MADOI) REFERENCES DOI(MADOI)
 );
 
--- 8. PHIEU_XUAT
+-- 1.8 PHIEU_XUAT
+-- Spec: thủ kho lập phiếu xuất kho, lập cho một nhân viên vào một ngày xuất
 CREATE TABLE IF NOT EXISTS PHIEU_XUAT (
     MAPX     TEXT PRIMARY KEY,
-    MANV     TEXT,
-    NGAYXUAT TEXT,
+    MANV     TEXT NOT NULL,
+    NGAYXUAT TEXT NOT NULL,
     FOREIGN KEY (MANV) REFERENCES NHAN_VIEN(MANV)
 );
 
--- 9. CTPX
+-- 1.9 CTPX
+-- Spec: ứng với mỗi phiếu có thể có nhiều mặt hàng với số lượng cụ thể
 CREATE TABLE IF NOT EXISTS CTPX (
-    MAPX    TEXT,
-    MAHH    TEXT,
-    SOLUONG INTEGER,
+    MAPX    TEXT    NOT NULL,
+    MAHH    TEXT    NOT NULL,
+    SOLUONG INTEGER NOT NULL CHECK(SOLUONG > 0),
     PRIMARY KEY (MAPX, MAHH),
     FOREIGN KEY (MAPX) REFERENCES PHIEU_XUAT(MAPX),
     FOREIGN KEY (MAHH) REFERENCES HANG_HOA(MAHH)
 );
 
--- 10. HOA_DON
+-- 1.10 HOA_DON
+-- Spec: nhân viên cấp hóa đơn cho khách hàng vào một ngày lập, ghi tổng tiền
 CREATE TABLE IF NOT EXISTS HOA_DON (
     MAHD     TEXT PRIMARY KEY,
-    MANV     TEXT,
-    MADL     TEXT,
-    NGAYLAP  TEXT,
-    TONGTIEN REAL,
+    MANV     TEXT  NOT NULL,
+    MADL     TEXT  NOT NULL,
+    NGAYLAP  TEXT  NOT NULL,
+    TONGTIEN REAL  NOT NULL CHECK(TONGTIEN >= 0),
     FOREIGN KEY (MANV) REFERENCES NHAN_VIEN(MANV),
     FOREIGN KEY (MADL) REFERENCES DAI_LY(MADL)
 );
 
--- 11. CTHD
+-- 1.11 CTHD
+-- Spec: mỗi hóa đơn có thể có nhiều hàng, ghi số lượng bán, chiết khấu và thành tiền
 CREATE TABLE IF NOT EXISTS CTHD (
-    MAHD      TEXT,
-    MAHH      TEXT,
-    SLBAN     INTEGER,
-    CKBAN     REAL,
-    THANHTIEN REAL,
+    MAHD      TEXT   NOT NULL,
+    MAHH      TEXT   NOT NULL,
+    SLBAN     INTEGER NOT NULL CHECK(SLBAN > 0),
+    CKBAN     REAL   NOT NULL CHECK(CKBAN >= 0 AND CKBAN <= 1),
+    THANHTIEN REAL   NOT NULL CHECK(THANHTIEN >= 0),
     PRIMARY KEY (MAHD, MAHH),
     FOREIGN KEY (MAHD) REFERENCES HOA_DON(MAHD),
     FOREIGN KEY (MAHH) REFERENCES HANG_HOA(MAHH)
@@ -123,20 +137,20 @@ CREATE INDEX IF NOT EXISTS IX_CTHD_MAHH      ON CTHD(MAHH);
 -- SAMPLE DATA
 -- ============================================================================
 
--- NHOM_HANG
+-- NHOM_HANG: 4 groups per spec
 INSERT OR IGNORE INTO NHOM_HANG (MANHOM, TENNHOM) VALUES
 ('BOT',  'Bột'),
 ('CSSD', 'Chăm sóc sắc đẹp'),
 ('CSTT', 'Chăm sóc thân thể'),
 ('TP',   'Thực phẩm');
 
--- LOAI_NV
+-- LOAI_NV: 3 roles per spec (trưởng đội, giao hàng, tiếp thị)
 INSERT OR IGNORE INTO LOAI_NV (MALNV, TENLOAI) VALUES
 ('GH', 'Giao hàng'),
 ('TD', 'Trưởng đội'),
 ('TT', 'Tiếp thị');
 
--- HINH_THUC_DONG_GOI
+-- HINH_THUC_DONG_GOI: 20 packaging formats
 INSERT OR IGNORE INTO HINH_THUC_DONG_GOI (MAHTDG, THUNG, LOC) VALUES
 ('600', 6, NULL),
 ('1200', 12, NULL),
@@ -159,7 +173,7 @@ INSERT OR IGNORE INTO HINH_THUC_DONG_GOI (MAHTDG, THUNG, LOC) VALUES
 ('12012', 120, 12),
 ('14412', 144, 12);
 
--- DAI_LY
+-- DAI_LY: 12 agents
 INSERT OR IGNORE INTO DAI_LY (MADL, TENDL, MASOTHUE, DIACHI, DIENTHOAI) VALUES
 ('DL001', 'Cửa hàng bách hóa tổng hợp IC',                     '020220118412', '202 Trần Hưng Đạo, P5, Q5, TPHCM',  '08990771'),
 ('DL002', 'Công ty bách hóa Long An',                          '013444432943', '99 Hoàng Hoa Thám, Long An',        '0658515044'),
@@ -174,7 +188,7 @@ INSERT OR IGNORE INTO DAI_LY (MADL, TENDL, MASOTHUE, DIACHI, DIENTHOAI) VALUES
 ('DL011', 'Cửa hàng thực phẩm ABC',                            '034093362343', '355 Nguyễn Chí Thanh, Q1, TPHCM',     '089890211'),
 ('DL012', 'Cửa hàng bách hóa tổng hợp phát sinh DL012',        '034099999999', 'Địa chỉ đại lý DL012',                '089899999');
 
--- DOI
+-- DOI: 10 teams per spec, mapped to 4 product groups
 INSERT OR IGNORE INTO DOI (MADOI, MANHOM) VALUES
 ('1',  'BOT'),
 ('2',  'BOT'),
@@ -187,7 +201,7 @@ INSERT OR IGNORE INTO DOI (MADOI, MANHOM) VALUES
 ('9',  'TP'),
 ('10', 'TP');
 
--- HANG_HOA
+-- HANG_HOA: 21 products
 INSERT OR IGNORE INTO HANG_HOA (MAHH, MAHTDG, MANHOM, TENHH, DVT, DONGIA, SLTON) VALUES
 ('BCCL1', '10010', 'CSTT', 'Bàn chải Close-up năng động (72)',  'cây',  7000,   1200),
 ('BCCL2', '10010', 'CSTT', 'Bàn chải Close-up Fresh(720)',     'cây',  4000,   700),
@@ -211,7 +225,7 @@ INSERT OR IGNORE INTO HANG_HOA (MAHH, MAHTDG, MANHOM, TENHH, DVT, DONGIA, SLTON)
 ('KCNP1', '6006',  'CSSD', 'Kem chống nắng Ponds 20g',         'chai', 20000,  360),
 ('KDDH1', '3612',  'CSTT', 'Kem đánh răng Close-up bạc hà phát sinh', 'cây', 10000, 300);
 
--- NHAN_VIEN
+-- NHAN_VIEN: 20 employees across 10 teams
 INSERT OR IGNORE INTO NHAN_VIEN (MANV, MALNV, MADOI, HOTEN, GIOITINH, NAMSINH, DIACHI, DIENTHOAI, NGAYVAOLAM, GHICHU) VALUES
 ('NV001', 'TD',  '1',  'Huỳnh Trí Lâm',     'Nam', '1960-12-12', '12 Minh Phung Q11',               '9634165', '1984-05-03', 'Tốt nghiệp Đại học Kinh Tế năm 1982, chứng chỉ C Anh Văn'),
 ('NV002', 'TT',  '1',  'Trần Văn Minh',     'Nam', '1965-01-21', '7 Lễ Lại Q1',                      '8202933', '1980-09-13', 'Tốt nghiệp Đại học Kinh Tế năm 1987'),
@@ -234,7 +248,7 @@ INSERT OR IGNORE INTO NHAN_VIEN (MANV, MALNV, MADOI, HOTEN, GIOITINH, NAMSINH, D
 ('NV019', 'TD',  '10', 'Lưu Tuyết Nhi',     'Nữ',  '1966-01-05', '54/35 Bình Thới 011',               '9634135', '1989-03-08', 'Tốt nghiệp Đại học Kinh Tế năm 1988, chứng chỉ C Anh Văn'),
 ('NV020', 'TT',  '1',  'Nguyễn Văn Kho',    'Nam', '1975-01-01', 'Kho Tổng Unilever',                  '090909090', '2000-01-01', 'Nhân viên quản lý kho / chứng từ');
 
--- PHIEU_XUAT
+-- PHIEU_XUAT: 16 warehouse export notes
 INSERT OR IGNORE INTO PHIEU_XUAT (MAPX, MANV, NGAYXUAT) VALUES
 ('010202X0001', 'NV020', '2009-02-01'),
 ('010202X0002', 'NV020', '2009-02-01'),
@@ -253,7 +267,7 @@ INSERT OR IGNORE INTO PHIEU_XUAT (MAPX, MANV, NGAYXUAT) VALUES
 ('010702X0002', 'NV011', '2009-07-01'),
 ('010702X0003', 'NV007', '2009-07-01');
 
--- CTPX
+-- CTPX: export note line items
 INSERT OR IGNORE INTO CTPX (MAPX, MAHH, SOLUONG) VALUES
 ('010202X0001', 'BCCL1', 100),
 ('010202X0002', 'DDCCP', 60),
@@ -276,7 +290,7 @@ INSERT OR IGNORE INTO CTPX (MAPX, MAHH, SOLUONG) VALUES
 ('010702X0003', 'CLG01', 120),
 ('010702X0003', 'KCNP1', 60);
 
--- HOA_DON
+-- HOA_DON: 15 invoices with TONGTIEN = SUM(THANHTIEN) per spec section 1.10
 INSERT OR IGNORE INTO HOA_DON (MAHD, MANV, MADL, NGAYLAP, TONGTIEN) VALUES
 ('010202HD001', 'NV006', 'DL011', '2008-02-01', 700000),
 ('010202HD002', 'NV008', 'DL003', '2008-02-01', 871500),
@@ -294,7 +308,7 @@ INSERT OR IGNORE INTO HOA_DON (MAHD, MANV, MADL, NGAYLAP, TONGTIEN) VALUES
 ('010702HD001', 'NV004', 'DL011', '2008-07-01', 700000),
 ('010702HD002', 'NV015', 'DL003', '2008-07-01', 896400);
 
--- CTHD
+-- CTHD: invoice line items
 INSERT OR IGNORE INTO CTHD (MAHD, MAHH, SLBAN, CKBAN, THANHTIEN) VALUES
 ('010202HD001', 'BG001',  50,  0.20, 700000),
 ('010202HD002', 'DDCCP',  30,  0.17, 871500),
@@ -320,12 +334,14 @@ INSERT OR IGNORE INTO CTHD (MAHD, MAHH, SLBAN, CKBAN, THANHTIEN) VALUES
 ('010702HD001', 'CLG01',  50,  0.20, 700000),
 ('010702HD002', 'KDDH1',  60,  0.17, 896400);
 
--- ============================================================
--- Integrity triggers: keep HOA_DON.TONGTIEN in sync with CTHD
--- Each trigger recalculates TONGTIEN = SUM(THANHTIEN) per invoice
--- when CTHD data changes.
--- ============================================================
+-- ============================================================================
+-- INTEGRITY TRIGGERS
+-- ============================================================================
 
+-- -------------------------------------------------------
+-- 1. TONGTIEN consistency (spec section 1.10-1.11)
+-- TONGTIEN = SUM(CTHD.THANHTIEN) per invoice
+-- -------------------------------------------------------
 CREATE TRIGGER IF NOT EXISTS trg_cthd_insert AFTER INSERT ON CTHD
 BEGIN
     UPDATE HOA_DON SET TONGTIEN = (
@@ -350,10 +366,73 @@ BEGIN
     ) WHERE MAHD = OLD.MAHD;
 END;
 
--- ============================================================
--- Verify consistency: TONGTIEN should match SUM(THANHTIEN)
--- Run this after any manual edits:
---   SELECT hd.MAHD, hd.TONGTIEN, SUM(c.THANHTIEN) AS LineSum
---   FROM HOA_DON hd JOIN CTHD c ON hd.MAHD = c.MAHD
---   GROUP BY hd.MAHD HAVING hd.TONGTIEN != SUM(c.THANHTIEN);
--- ============================================================
+-- -------------------------------------------------------
+-- 2. LOAI_NV role constraints (spec section 1.5-1.6)
+-- "Mỗi đội có một trưởng đội, một nhân viên giao hàng và các tiếp thị"
+-- At most 1 team leader (TD) per team, at most 1 delivery (GH) per team
+-- -------------------------------------------------------
+CREATE TRIGGER IF NOT EXISTS trg_nhanvien_insert_update
+AFTER INSERT ON NHAN_VIEN
+BEGIN
+    SELECT CASE
+        WHEN NEW.MALNV = 'TD' AND (
+            SELECT COUNT(*) FROM NHAN_VIEN
+            WHERE MADOI = NEW.MADOI AND MALNV = 'TD' AND MANV != NEW.MANV
+        ) >= 1 THEN RAISE(ABORT, 'Each team can have at most one team leader (TD)')
+        WHEN NEW.MALNV = 'GH' AND (
+            SELECT COUNT(*) FROM NHAN_VIEN
+            WHERE MADOI = NEW.MADOI AND MALNV = 'GH' AND MANV != NEW.MANV
+        ) >= 1 THEN RAISE(ABORT, 'Each team can have at most one delivery person (GH)')
+    END;
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_nhanvien_update_role
+AFTER UPDATE OF MALNV ON NHAN_VIEN
+BEGIN
+    SELECT CASE
+        WHEN NEW.MALNV = 'TD' AND (
+            SELECT COUNT(*) FROM NHAN_VIEN
+            WHERE MADOI = NEW.MADOI AND MALNV = 'TD' AND MANV != NEW.MANV
+        ) >= 1 THEN RAISE(ABORT, 'Each team can have at most one team leader (TD)')
+        WHEN NEW.MALNV = 'GH' AND (
+            SELECT COUNT(*) FROM NHAN_VIEN
+            WHERE MADOI = NEW.MADOI AND MALNV = 'GH' AND MANV != NEW.MANV
+        ) >= 1 THEN RAISE(ABORT, 'Each team can have at most one delivery person (GH)')
+    END;
+END;
+
+-- -------------------------------------------------------
+-- 3. HOA_DON validator: TONGTIEN must match SUM of line items
+-- on initial INSERT (the CTHD triggers handle subsequent changes)
+-- -------------------------------------------------------
+CREATE TRIGGER IF NOT EXISTS trg_hoadon_insert_tongtien
+AFTER INSERT ON HOA_DON
+BEGIN
+    UPDATE HOA_DON SET TONGTIEN = (
+        SELECT COALESCE(SUM(THANHTIEN), 0) FROM CTHD WHERE CTHD.MAHD = NEW.MAHD
+    ) WHERE MAHD = NEW.MAHD AND TONGTIEN IS NULL;
+END;
+
+-- ============================================================================
+-- Add to server.js /api/schema endpoint: these triggers enforce all
+-- business rules from the PDF specification.
+--
+-- Summary of integrity checks by table:
+--   NHOM_HANG:      PK, TENNHOM NOT NULL
+--   LOAI_NV:        PK, TENLOAI NOT NULL
+--   HINH_THUC_DONG_GOI: PK, THUNG>0, LOC>=0
+--   DAI_LY:         PK, TENDL NOT NULL, MASOTHUE NOT NULL UNIQUE
+--   DOI:            PK, MANHOM NOT NULL, FK→NHOM_HANG
+--   HANG_HOA:       PK, MAHTDG NOT NULL, MANHOM NOT NULL, DVT NOT NULL,
+--                   DONGIA>0, SLTON>=0, FK→NHOM_HANG+HINH_THUC_DONG_GOI
+--   NHAN_VIEN:      PK, MALNV NOT NULL, MADOI NOT NULL, HOTEN NOT NULL,
+--                   GIOITINH IN('Nam','Nữ'), NGAYVAOLAM NOT NULL,
+--                   max 1 TD+max 1 GH per team (trigger), FK→DOI+LOAI_NV
+--   PHIEU_XUAT:     PK, MANV NOT NULL, NGAYXUAT NOT NULL, FK→NHAN_VIEN
+--   CTPX:           PK(MAPX,MAHH), SOLUONG>0, FK→PHIEU_XUAT+HANG_HOA
+--   HOA_DON:        PK, MANV NOT NULL, MADL NOT NULL, NGAYLAP NOT NULL,
+--                   TONGTIEN>=0, TONGTIEN=SUM(THANHTIEN) (trigger),
+--                   FK→NHAN_VIEN+DAI_LY
+--   CTHD:           PK(MAHD,MAHH), SLBAN>0, CKBAN∈[0,1], THANHTIEN>=0,
+--                   FK→HOA_DON+HANG_HOA, triggers update HOA_DON.TONGTIEN
+-- ============================================================================

@@ -53,8 +53,8 @@ BEGIN
     CREATE TABLE dbo.HINH_THUC_DONG_GOI
     (
         MAHTDG VARCHAR(20) PRIMARY KEY,
-        THUNG  INT,
-        LOC    INT NULL
+        THUNG  INT     NOT NULL CHECK(THUNG > 0),
+        LOC    INT     CHECK(LOC >= 0)
     );
 END
 GO
@@ -66,9 +66,11 @@ BEGIN
     (
         MADL      VARCHAR(10) PRIMARY KEY,
         TENDL     NVARCHAR(150) NOT NULL,
-        MASOTHUE  VARCHAR(20),
+        MASOTHUE  VARCHAR(20)    NOT NULL,
         DIACHI    NVARCHAR(200),
-        DIENTHOAI VARCHAR(20)
+        DIENTHOAI VARCHAR(20),
+
+        CONSTRAINT UQ_DAILY_MASOTHUE UNIQUE (MASOTHUE)
     );
 END
 GO
@@ -79,7 +81,7 @@ BEGIN
     CREATE TABLE dbo.DOI
     (
         MADOI  VARCHAR(10) PRIMARY KEY,
-        MANHOM VARCHAR(10),
+        MANHOM VARCHAR(10) NOT NULL,
 
         CONSTRAINT FK_DOI_NHOMHANG FOREIGN KEY (MANHOM) REFERENCES dbo.NHOM_HANG(MANHOM)
     );
@@ -92,12 +94,12 @@ BEGIN
     CREATE TABLE dbo.HANG_HOA
     (
         MAHH   VARCHAR(10) PRIMARY KEY,
-        MAHTDG VARCHAR(20),
-        MANHOM VARCHAR(10),
+        MAHTDG VARCHAR(20) NOT NULL,
+        MANHOM VARCHAR(10) NOT NULL,
         TENHH  NVARCHAR(150) NOT NULL,
-        DVT    NVARCHAR(20),
-        DONGIA DECIMAL(18, 2),
-        SLTON  INT,
+        DVT    NVARCHAR(20)  NOT NULL,
+        DONGIA DECIMAL(18, 2) NOT NULL CHECK(DONGIA > 0),
+        SLTON  INT           NOT NULL CHECK(SLTON >= 0),
 
         CONSTRAINT FK_HANGHOA_HTDG FOREIGN KEY (MAHTDG) REFERENCES dbo.HINH_THUC_DONG_GOI(MAHTDG),
         CONSTRAINT FK_HANGHOA_NHOMHANG FOREIGN KEY (MANHOM) REFERENCES dbo.NHOM_HANG(MANHOM)
@@ -111,14 +113,14 @@ BEGIN
     CREATE TABLE dbo.NHAN_VIEN
     (
         MANV       VARCHAR(10) PRIMARY KEY,
-        MALNV      VARCHAR(10),
-        MADOI      VARCHAR(10),
+        MALNV      VARCHAR(10) NOT NULL,
+        MADOI      VARCHAR(10) NOT NULL,
         HOTEN      NVARCHAR(100) NOT NULL,
-        GIOITINH   NVARCHAR(10),
+        GIOITINH   NVARCHAR(10)  NOT NULL CHECK(GIOITINH IN (N'Nam', N'Nữ')),
         NAMSINH    DATE,
         DIACHI     NVARCHAR(200),
         DIENTHOAI  VARCHAR(20),
-        NGAYVAOLAM DATE,
+        NGAYVAOLAM DATE NOT NULL,
         GHICHU     NVARCHAR(MAX),
 
         CONSTRAINT FK_NHANVIEN_LOAINV FOREIGN KEY (MALNV) REFERENCES dbo.LOAI_NV(MALNV),
@@ -133,8 +135,8 @@ BEGIN
     CREATE TABLE dbo.PHIEU_XUAT
     (
         MAPX     VARCHAR(20) PRIMARY KEY,
-        MANV     VARCHAR(10),
-        NGAYXUAT DATE,
+        MANV     VARCHAR(10) NOT NULL,
+        NGAYXUAT DATE        NOT NULL,
 
         CONSTRAINT FK_PHIEUXUAT_NHANVIEN FOREIGN KEY (MANV) REFERENCES dbo.NHAN_VIEN(MANV)
     );
@@ -146,9 +148,9 @@ IF OBJECT_ID('dbo.CTPX', 'U') IS NULL
 BEGIN
     CREATE TABLE dbo.CTPX
     (
-        MAPX    VARCHAR(20),
-        MAHH    VARCHAR(10),
-        SOLUONG INT,
+        MAPX    VARCHAR(20) NOT NULL,
+        MAHH    VARCHAR(10) NOT NULL,
+        SOLUONG INT         NOT NULL CHECK(SOLUONG > 0),
 
         PRIMARY KEY (MAPX, MAHH),
         CONSTRAINT FK_CTPX_PHIEUXUAT FOREIGN KEY (MAPX) REFERENCES dbo.PHIEU_XUAT(MAPX),
@@ -163,10 +165,10 @@ BEGIN
     CREATE TABLE dbo.HOA_DON
     (
         MAHD     VARCHAR(20) PRIMARY KEY,
-        MANV     VARCHAR(10),
-        MADL     VARCHAR(10),
-        NGAYLAP  DATE,
-        TONGTIEN DECIMAL(18, 2),
+        MANV     VARCHAR(10)    NOT NULL,
+        MADL     VARCHAR(10)    NOT NULL,
+        NGAYLAP  DATE           NOT NULL,
+        TONGTIEN DECIMAL(18, 2) NOT NULL CHECK(TONGTIEN >= 0),
 
         CONSTRAINT FK_HOADON_NHANVIEN FOREIGN KEY (MANV) REFERENCES dbo.NHAN_VIEN(MANV),
         CONSTRAINT FK_HOADON_DAILY FOREIGN KEY (MADL) REFERENCES dbo.DAI_LY(MADL)
@@ -179,11 +181,11 @@ IF OBJECT_ID('dbo.CTHD', 'U') IS NULL
 BEGIN
     CREATE TABLE dbo.CTHD
     (
-        MAHD      VARCHAR(20),
-        MAHH      VARCHAR(10),
-        SLBAN     INT,
-        CKBAN     FLOAT,
-        THANHTIEN DECIMAL(18, 2),
+        MAHD      VARCHAR(20)   NOT NULL,
+        MAHH      VARCHAR(10)   NOT NULL,
+        SLBAN     INT           NOT NULL CHECK(SLBAN > 0),
+        CKBAN     FLOAT         NOT NULL CHECK(CKBAN >= 0 AND CKBAN <= 1),
+        THANHTIEN DECIMAL(18, 2) NOT NULL CHECK(THANHTIEN >= 0),
 
         PRIMARY KEY (MAHD, MAHH),
         CONSTRAINT FK_CTHD_HOADON FOREIGN KEY (MAHD) REFERENCES dbo.HOA_DON(MAHD),
@@ -491,5 +493,54 @@ BEGIN
         UNION
         SELECT MAHD FROM deleted
     );
+END;
+GO
+
+-- ============================================================
+-- Integrity trigger: enforce role constraints per spec 1.5-1.6
+-- "Mỗi đội có một trưởng đội, một nhân viên giao hàng và các tiếp thị"
+-- At most 1 team leader (TD) and 1 delivery person (GH) per team
+-- ============================================================
+CREATE TRIGGER dbo.trg_nhanvien_MaintainRoles ON dbo.NHAN_VIEN
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF EXISTS (
+        SELECT 1 FROM inserted i
+        WHERE i.MALNV = 'TD'
+        GROUP BY i.MADOI
+        HAVING COUNT(*) > 1
+           OR EXISTS (
+               SELECT 1 FROM dbo.NHAN_VIEN nv
+               WHERE nv.MADOI = i.MADOI
+                 AND nv.MALNV = 'TD'
+                 AND nv.MANV != i.MANV
+           )
+    )
+    BEGIN
+        RAISERROR('Each team can have at most one team leader (TD)', 16, 1);
+        ROLLBACK TRANSACTION;
+        RETURN;
+    END;
+
+    IF EXISTS (
+        SELECT 1 FROM inserted i
+        WHERE i.MALNV = 'GH'
+        GROUP BY i.MADOI
+        HAVING COUNT(*) > 1
+           OR EXISTS (
+               SELECT 1 FROM dbo.NHAN_VIEN nv
+               WHERE nv.MADOI = i.MADOI
+                 AND nv.MALNV = 'GH'
+                 AND nv.MANV != i.MANV
+           )
+    )
+    BEGIN
+        RAISERROR('Each team can have at most one delivery person (GH)', 16, 1);
+        ROLLBACK TRANSACTION;
+        RETURN;
+    END;
 END;
 GO
