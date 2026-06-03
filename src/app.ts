@@ -172,6 +172,45 @@ function showSidebar(panel: string): void {
 		.forEach((p) => p.classList.toggle("active", p.id === "panel-" + panel));
 }
 
+// ─── Sidebar resize ────────────────────────────────────────────────────────
+function addSidebarResize(): void {
+	const grip = document.getElementById("sidebarGrip");
+	if (!grip) return;
+	let isDragging = false;
+
+	grip.addEventListener("mousedown", (e: MouseEvent) => {
+		e.preventDefault();
+		isDragging = true;
+		grip.classList.add("dragging");
+		document.body.style.cursor = "col-resize";
+		document.body.style.userSelect = "none";
+
+		const onMove = (ev: MouseEvent) => {
+			if (!isDragging) return;
+			let w = ev.clientX;
+			w = Math.max(280, Math.min(600, w));
+			document.documentElement.style.setProperty(
+				"--sidebar-width",
+				w + "px",
+			);
+		};
+
+		const onUp = () => {
+			isDragging = false;
+			grip.classList.remove("dragging");
+			document.body.style.cursor = "";
+			document.body.style.userSelect = "";
+			document.removeEventListener("mousemove", onMove);
+			document.removeEventListener("mouseup", onUp);
+			if (cmEditor) setTimeout(() => cmEditor.refresh(), 0);
+			if (cmSandbox) setTimeout(() => cmSandbox.refresh(), 0);
+		};
+
+		document.addEventListener("mousemove", onMove);
+		document.addEventListener("mouseup", onUp);
+	});
+}
+
 // ─── Load exercises ────────────────────────────────────────────────────────
 function loadExercises() {
 	if (activeDbId !== "unilever") {
@@ -421,9 +460,30 @@ function showSchemaView(view: string): void {
 	document
 		.querySelectorAll(".schema-view")
 		.forEach((s) => s.classList.toggle("active", s.id === "sv-" + view));
+}
+
+// ─── Bottom panel ──────────────────────────────────────────────────────────
+function showBottomView(view: string): void {
+	document
+		.querySelectorAll(".bottom-tab")
+		.forEach((t) =>
+			(t as HTMLElement).classList.toggle(
+				"active",
+				(t as HTMLElement).dataset.bview === view,
+			),
+		);
+	document
+		.querySelectorAll(".bottom-view")
+		.forEach((v) => v.classList.toggle("active", v.id === "bv-" + view));
 	if (view === "er" && schemaData) {
 		setTimeout(() => renderERDiagram(), 100);
 	}
+}
+
+function toggleBottomPanel(): void {
+	document.getElementById("bottomPanel")?.classList.toggle("collapsed");
+	if (cmEditor) setTimeout(() => cmEditor.refresh(), 50);
+	if (cmSandbox) setTimeout(() => cmSandbox.refresh(), 50);
 }
 
 function loadSchema() {
@@ -432,6 +492,79 @@ function loadSchema() {
 		renderTableCards();
 		refreshEditorHints();
 	}
+}
+
+// ─── Render Checks tab ─────────────────────────────────────────────────────
+function renderChecks(): void {
+	const container = document.getElementById("bv-checks");
+	if (!container || !schemaData) return;
+	let html = '<div class="table-cards">';
+	for (const [name, info] of Object.entries(schemaData)) {
+		const pkNames = (info as any).columns
+			.filter((c: any) => c.pk)
+			.map((c: any) => c.name);
+		const notNullCols = (info as any).columns
+			.filter((c: any) => c.notnull)
+			.map((c: any) => c.name);
+		const fkCount = (info as any).foreignKeys.length;
+
+		html += `<div class="table-card">
+      <div class="table-card-header" onclick="this.nextElementSibling.classList.toggle('collapsed')">
+        <span>${name}</span>
+        <span style="font-size:10px;color:#8b949e">${(info as any).columns.length} cols</span>
+      </div>
+      <div class="table-card-body">
+        <div class="schema-col"><span class="col-name">Primary Key:</span><span class="col-type">${pkNames.join(", ") || "None"}</span></div>
+        <div class="schema-col"><span class="col-name">NOT NULL:</span><span class="col-type">${notNullCols.length > 0 ? notNullCols.join(", ") : "None"}</span></div>
+        <div class="schema-col"><span class="col-name">Foreign Keys:</span><span class="col-type">${fkCount > 0 ? fkCount + " relationship(s)" : "None"}</span></div>
+      </div></div>`;
+	}
+	html += "</div>";
+	container.innerHTML = html;
+}
+
+// ─── Bottom panel vertical resize ──────────────────────────────────────────
+function addBottomResize(): void {
+	const grip = document.getElementById("bottomGrip");
+	const panel = document.getElementById("bottomPanel");
+	if (!grip || !panel) return;
+	let isDragging = false;
+	let startY = 0;
+	let startHeight = 0;
+
+	grip.addEventListener("mousedown", (e: MouseEvent) => {
+		if (panel.classList.contains("collapsed")) return;
+		e.preventDefault();
+		isDragging = true;
+		startY = e.clientY;
+		startHeight = panel.offsetHeight;
+		document.body.style.cursor = "ns-resize";
+		document.body.style.userSelect = "none";
+
+		const onMove = (ev: MouseEvent) => {
+			if (!isDragging) return;
+			const delta = startY - ev.clientY;
+			let h = startHeight + delta;
+			const maxH = window.innerHeight * 0.5;
+			h = Math.max(32, Math.min(maxH, h));
+			panel.style.height = h + "px";
+		};
+
+		const onUp = () => {
+			isDragging = false;
+			document.body.style.cursor = "";
+			document.body.style.userSelect = "";
+			document.removeEventListener("mousemove", onMove);
+			document.removeEventListener("mouseup", onUp);
+			clearTimeout((panel as any)._resizeTimer);
+			(panel as any)._resizeTimer = setTimeout(() => {
+				if (schemaData) renderERDiagram();
+			}, 300);
+		};
+
+		document.addEventListener("mousemove", onMove);
+		document.addEventListener("mouseup", onUp);
+	});
 }
 
 // ─── Practice Mode ─────────────────────────────────────────────────────────
@@ -749,6 +882,8 @@ function loadSqlFromText() {
 			schemaData = getSchema();
 			loadExercises();
 			renderTableCards();
+			renderERDiagram();
+			renderChecks();
 			refreshEditorHints();
 		} catch (e) {
 			errorEl.textContent = "SQL error: " + e.message;
@@ -780,6 +915,8 @@ async function resetDatabase() {
 	schemaData = getSchema();
 	loadExercises();
 	renderTableCards();
+	renderERDiagram();
+	renderChecks();
 	refreshEditorHints();
 }
 
@@ -872,8 +1009,12 @@ async function init() {
 	updateDbStatusUI();
 	schemaData = getSchema();
 	renderTableCards();
+	renderERDiagram();
+	renderChecks();
 	loadExercises();
 	refreshEditorHints();
+	addSidebarResize();
+	addBottomResize();
 }
 
 init().catch((e) => {
