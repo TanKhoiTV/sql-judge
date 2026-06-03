@@ -12,8 +12,14 @@ import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DB_PATH = path.resolve(__dirname, "../public/db/Unilever_Product_Management.db");
-const OUT_PATH = path.resolve(__dirname, "../public/db/Unilever_Product_Management.er.svg");
+const DB_PATH = path.resolve(
+	__dirname,
+	"../public/db/Unilever_Product_Management.db",
+);
+const OUT_PATH = path.resolve(
+	__dirname,
+	"../public/db/Unilever_Product_Management.er.svg",
+);
 
 // ─── Layout constants ──────────────────────────────────────────────────────
 const TABLE_W = 200;
@@ -78,9 +84,7 @@ function getSchema(dbPath: string): Map<string, TableInfo> {
 		.all() as { name: string }[];
 
 	for (const { name } of tableRows) {
-		const colRows = db
-			.prepare(`PRAGMA table_info('${name}')`)
-			.all() as any[];
+		const colRows = db.prepare(`PRAGMA table_info('${name}')`).all() as any[];
 		const columns: Column[] = colRows.map((r: any) => ({
 			name: r.name,
 			type: r.type,
@@ -106,9 +110,7 @@ function getSchema(dbPath: string): Map<string, TableInfo> {
 }
 
 // ─── Topological layer assignment ──────────────────────────────────────────
-function assignLayers(
-	tables: Map<string, TableInfo>,
-): Map<string, number> {
+function assignLayers(tables: Map<string, TableInfo>): Map<string, number> {
 	const layers = new Map<string, number>();
 	const tableNames = [...tables.keys()];
 
@@ -236,11 +238,7 @@ function escXml(s: string): string {
 		.replace(/"/g, "&quot;");
 }
 
-function drawCard(
-	name: string,
-	info: TableInfo,
-	pos: Position,
-): string {
+function drawCard(name: string, info: TableInfo, pos: Position): string {
 	const { x, y, tableHeight } = pos;
 	const lines: string[] = [];
 
@@ -249,9 +247,7 @@ function drawCard(
 
 	// Header bar
 	lines.push(svgRect(x, y + HDR_H - R, TABLE_W, R, 0, C.headerBg, C.headerBg));
-	lines.push(
-		svgRect(x, y, TABLE_W, HDR_H, R, C.headerBg, C.colBorder),
-	);
+	lines.push(svgRect(x, y, TABLE_W, HDR_H, R, C.headerBg, C.colBorder));
 	// Header bottom line (overlap with main rect)
 	lines.push(
 		`<line${svgAttr("x1", x)}${svgAttr("y1", y + HDR_H)}${svgAttr("x2", x + TABLE_W)}${svgAttr("y2", y + HDR_H)}${svgAttr("stroke", C.colBorder)}${svgAttr("stroke-width", "1")}/>`,
@@ -331,7 +327,10 @@ function drawFK(
 
 			// Target: left edge of parent table
 			const x2 = toPos.x;
-			const y2 = toPos.y + HDR_H + (getColIndex(tables.get(fk.table)!, fk.to) + 0.5) * COL_H;
+			const y2 =
+				toPos.y +
+				HDR_H +
+				(getColIndex(tables.get(fk.table)!, fk.to) + 0.5) * COL_H;
 
 			const midX = (x1 + x2) / 2;
 			const isFk = true;
@@ -375,7 +374,9 @@ function getColIndex(info: TableInfo, colName: string): number {
 function generate(): void {
 	if (!fs.existsSync(DB_PATH)) {
 		console.error(`Database not found at ${DB_PATH}`);
-		console.error('Run the database creation script first: npx tsx scripts/create_db.ts');
+		console.error(
+			"Run the database creation script first: npx tsx scripts/create_db.ts",
+		);
 		process.exit(1);
 	}
 
@@ -420,10 +421,26 @@ function generate(): void {
 		svgText(legendX + 10, legendY + 16, "Legend", C.headerText, 11, "600"),
 	);
 	svgParts.push(
-		svgText(legendX + 10, legendY + 32, "🔑 PK column", C.pkText, 10, "400", "monospace"),
+		svgText(
+			legendX + 10,
+			legendY + 32,
+			"🔑 PK column",
+			C.pkText,
+			10,
+			"400",
+			"monospace",
+		),
 	);
 	svgParts.push(
-		svgText(legendX + 10, legendY + 48, "↳ FK column  ─ ─ → FK relationship", C.fkText, 10, "400", "monospace"),
+		svgText(
+			legendX + 10,
+			legendY + 48,
+			"↳ FK column  ─ ─ → FK relationship",
+			C.fkText,
+			10,
+			"400",
+			"monospace",
+		),
 	);
 
 	svgParts.push("</svg>");

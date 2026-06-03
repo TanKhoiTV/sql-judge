@@ -450,8 +450,7 @@ function doRenderMermaid(container: HTMLElement): void {
 
 		_mermaidLoading = true;
 		const script = document.createElement("script");
-		script.src =
-			"https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js";
+		script.src = "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js";
 		script.onload = () => {
 			_mermaidLoading = false;
 			mermaid.initialize({ theme: "dark", startOnLoad: false });
@@ -1043,22 +1042,26 @@ function resultTable(
 // ─── Init ──────────────────────────────────────────────────────────────────
 
 async function init() {
-	// Load version first so badge always displays
-	try {
-		const vRes = await fetch("VERSION");
-		const vText = await vRes.text();
-		document.getElementById("versionBadge").textContent = "v" + vText.trim();
-	} catch {
-		/* VERSION fetch is best-effort */
-	}
-
-	// Load exercises JSON
-	try {
-		const exRes = await fetch("exercises/exercises.json");
-		allExerciseDefs = await exRes.json();
-	} catch {
-		/* exercises fetch is best-effort */
-	}
+	// Load version badge and exercises concurrently (independent of WASM/DB)
+	await Promise.all([
+		(async () => {
+			try {
+				const vRes = await fetch("VERSION");
+				document.getElementById("versionBadge").textContent =
+					"v" + (await vRes.text()).trim();
+			} catch {
+				/* VERSION fetch is best-effort */
+			}
+		})(),
+		(async () => {
+			try {
+				const exRes = await fetch("exercises/exercises.json");
+				allExerciseDefs = await exRes.json();
+			} catch {
+				/* exercises fetch is best-effort */
+			}
+		})(),
+	]);
 
 	// Initialize sql.js (loads WASM from CDN)
 	try {

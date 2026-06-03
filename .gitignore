@@ -5,6 +5,8 @@ node_modules/
 dist/
 public/app.js
 public/db/*.er.svg
+public/style.min.css
+public/**/*.gz
 
 # Logs
 *.log
