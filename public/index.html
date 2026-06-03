@@ -197,8 +197,7 @@
 
       function normalizeValue(v) {
         if (v === null || v === undefined) return "";
-        if (typeof v === "number")
-          return String(Math.round(v * 1e9) / 1e9);
+        if (typeof v === "number") return String(Math.round(v * 1e9) / 1e9);
         return String(v).trim();
       }
 
@@ -228,14 +227,10 @@
         }
         const userLower = user.cols.map((c) => c.toLowerCase());
         const refLower = ref.cols.map((c) => c.toLowerCase());
-        for (
-          let i = 0;
-          i < Math.min(user.cols.length, ref.cols.length);
-          i++
-        ) {
+        for (let i = 0; i < Math.min(user.cols.length, ref.cols.length); i++) {
           if (userLower[i] !== refLower[i]) {
             issues.push(
-              'Column ' +
+              "Column " +
                 (i + 1) +
                 ': expected "' +
                 ref.cols[i] +
@@ -282,12 +277,16 @@
 
       // ─── Sidebar tabs ─────────────────────────────────────────────────────────
       function showSidebar(panel) {
-        document.querySelectorAll(".sidebar-tab").forEach((t) =>
-          t.classList.toggle("active", t.dataset.panel === panel),
-        );
-        document.querySelectorAll(".sidebar-panel").forEach((p) =>
-          p.classList.toggle("active", p.id === "panel-" + panel),
-        );
+        document
+          .querySelectorAll(".sidebar-tab")
+          .forEach((t) =>
+            t.classList.toggle("active", t.dataset.panel === panel),
+          );
+        document
+          .querySelectorAll(".sidebar-panel")
+          .forEach((p) =>
+            p.classList.toggle("active", p.id === "panel-" + panel),
+          );
       }
 
       // ─── Load exercises ────────────────────────────────────────────────────────
@@ -318,9 +317,7 @@
         currentId = id;
         document
           .querySelectorAll(".exercise-item")
-          .forEach((el) =>
-            el.classList.toggle("active", el.dataset.id === id),
-          );
+          .forEach((el) => el.classList.toggle("active", el.dataset.id === id));
         if (currentMode === "practice") loadPractice(id);
         else loadSandbox();
       }
@@ -374,10 +371,7 @@
         });
 
         editor.on("inputRead", (cm, change) => {
-          if (
-            change.text.length === 1 &&
-            /[a-zA-Z._]/.test(change.text[0])
-          ) {
+          if (change.text.length === 1 && /[a-zA-Z._]/.test(change.text[0])) {
             CodeMirror.commands.autocomplete(cm, null, {
               completeSingle: false,
             });
@@ -393,10 +387,7 @@
 
       function setEditorValue(editor, val) {
         editor.setValue(val || "");
-        editor.setSize(
-          null,
-          Math.max(120, editor.getScrollInfo().height + 10),
-        );
+        editor.setSize(null, Math.max(120, editor.getScrollInfo().height + 10));
         editor.focus();
       }
 
@@ -445,9 +436,7 @@
         for (const t of tableOrder) {
           const info = schemaData[t];
           if (!info) continue;
-          const pkNames = info.columns
-            .filter((c) => c.pk)
-            .map((c) => c.name);
+          const pkNames = info.columns.filter((c) => c.pk).map((c) => c.name);
           const pkStr = pkNames.join(", ");
 
           html += `<div class="table-card">
@@ -544,9 +533,7 @@
           );
         document
           .querySelectorAll(".schema-view")
-          .forEach(
-            (s) => s.classList.toggle("active", s.id === "sv-" + view),
-          );
+          .forEach((s) => s.classList.toggle("active", s.id === "sv-" + view));
         if (view === "er" && schemaData) {
           setTimeout(() => renderERDiagram(), 100);
         }
@@ -880,7 +867,7 @@
       }
 
       async function resetDatabase() {
-        const res = await fetch("Unilever_Product_Management.db");
+        const res = await fetch("db/Unilever_Product_Management.db");
         const buffer = await res.arrayBuffer();
         db = new SQL.Database(new Uint8Array(buffer));
         activeDbName = "Unilever Product Management";
@@ -957,7 +944,7 @@
 
         // Load default database from binary .db file
         try {
-          const dbRes = await fetch("Unilever_Product_Management.db");
+          const dbRes = await fetch("db/Unilever_Product_Management.db");
           const dbBuffer = await dbRes.arrayBuffer();
           db = new SQL.Database(new Uint8Array(dbBuffer));
         } catch (e) {

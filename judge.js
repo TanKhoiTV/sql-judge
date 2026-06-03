@@ -16,8 +16,8 @@ const path = require("path");
 const fs = require("fs");
 const readline = require("readline");
 
-const DB_PATH = path.join(__dirname, "Unilever_Product_Management.db");
-const EXERCISES_PATH = path.join(__dirname, "exercises", "exercises.json");
+const DB_PATH = path.join(__dirname, "public", "db", "Unilever_Product_Management.db");
+const EXERCISES_PATH = path.join(__dirname, "public", "exercises", "exercises.json");
 
 const exercises = JSON.parse(fs.readFileSync(EXERCISES_PATH, "utf8"));
 

@@ -2,7 +2,7 @@ const { DatabaseSync } = require("node:sqlite");
 const fs = require("fs");
 const path = require("path");
 
-const dbPath = path.join(__dirname, "Unilever_Product_Management.db");
+const dbPath = path.join(__dirname, "..", "public", "db", "Unilever_Product_Management.db");
 const sqlPath = path.join(__dirname, "Unilever_Product_Management.sqlite.sql");
 
 // Remove old database

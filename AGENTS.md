@@ -1,28 +1,40 @@
-# Project Instructions — SQL Judge for Unilever Database
+# Project Instructions — SQL Judge
 
 ## Architecture
 
-This is a **fully client-side** application. No server required.
-- `public/index.html` — main page (HTML + JS logic)
-- `public/style.css` — all styles (extracted from inline)
-- `public/Unilever_Product_Management.db` — pre-built SQLite database
-- `public/exercises/` — exercise definitions (JSON)
-- `public/VERSION` — version tracking
+Fully **client-side** SQL practice judge. No server required.
 
-SQL execution happens in-browser via **sql.js** (WASM port of SQLite).
-The `.db` file and all other assets are fetched statically by the browser.
+```
+public/                     # Web app (http-server serves this directory)
+├── index.html              # Main page (HTML + JS)
+├── style.css               # All styles
+├── db/
+│   └── Unilever_Product_Management.db   # Pre-built SQLite database (asset)
+├── exercises/
+│   └── exercises.json      # Exercise definitions
+└── VERSION                 # Version displayed in UI
+
+scripts/                    # Development/CI helper scripts
+├── create_db.js            # Rebuild the .db from the .sql script
+└── Unilever_Product_Management.sqlite.sql  # SQLite schema + data + triggers
+
+judge.js                    # CLI judge (run from project root)
+VERSION                     # Canonical version (syncs with public/VERSION)
+```
+
+- SQL executed in-browser via **sql.js** (SQLite compiled to WASM)
+- Assets (`.db`, exercises, VERSION) fetched statically by the browser
 
 ## Running
 
 ```bash
-# Option A: open public/index.html directly (some browsers may block fetch)
-# Option B: serve with any static server
-npm start   # http-server on port 3000
+npm start     # http-server on port 3000, serves public/
+# or open public/index.html directly
 ```
 
 ## Versioning
 
-- Version is tracked in the `VERSION` file at project root (copied to `public/VERSION`).
-- The version badge is displayed at the bottom-right corner of the web UI.
-- **ANY change** to any project file must bump the version according to semantic versioning (`MAJOR.MINOR.PATCH`).
+- Version tracked in `VERSION` at project root (copied to `public/VERSION` on changes).
+- Version badge displayed at bottom-right corner of the web UI.
+- **ANY change** bumps version per semantic versioning (`MAJOR.MINOR.PATCH`).
 - **Never aggregate changes from different builds** — each change session gets its own version bump in a separate commit.
