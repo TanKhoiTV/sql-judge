@@ -85,7 +85,10 @@ function normalizeValue(v: unknown): string {
 	return String(v).trim();
 }
 
-function compareResults(user: any, ref: any): { pass: boolean; issues: string[] } {
+function compareResults(
+	user: any,
+	ref: any,
+): { pass: boolean; issues: string[] } {
 	const issues = [];
 	if (!user.ok) {
 		return { pass: false, issues: ["Query failed: " + user.error] };
@@ -158,7 +161,12 @@ function compareResults(user: any, ref: any): { pass: boolean; issues: string[] 
 function showSidebar(panel: string): void {
 	document
 		.querySelectorAll(".sidebar-tab")
-		.forEach((t) => (t as HTMLElement).classList.toggle("active", (t as HTMLElement).dataset.panel === panel));
+		.forEach((t) =>
+			(t as HTMLElement).classList.toggle(
+				"active",
+				(t as HTMLElement).dataset.panel === panel,
+			),
+		);
 	document
 		.querySelectorAll(".sidebar-panel")
 		.forEach((p) => p.classList.toggle("active", p.id === "panel-" + panel));
@@ -192,7 +200,12 @@ function selectExercise(id: string): void {
 	currentId = id;
 	document
 		.querySelectorAll(".exercise-item")
-		.forEach((el) => (el as HTMLElement).classList.toggle("active", (el as HTMLElement).dataset.id === id));
+		.forEach((el) =>
+			(el as HTMLElement).classList.toggle(
+				"active",
+				(el as HTMLElement).dataset.id === id,
+			),
+		);
 	if (currentMode === "practice") loadPractice(id);
 	else loadSandbox();
 }
@@ -399,7 +412,12 @@ function renderERDiagram() {
 function showSchemaView(view: string): void {
 	document
 		.querySelectorAll(".schema-tab")
-		.forEach((t) => (t as HTMLElement).classList.toggle("active", (t as HTMLElement).dataset.stab === view));
+		.forEach((t) =>
+			(t as HTMLElement).classList.toggle(
+				"active",
+				(t as HTMLElement).dataset.stab === view,
+			),
+		);
 	document
 		.querySelectorAll(".schema-view")
 		.forEach((s) => s.classList.toggle("active", s.id === "sv-" + view));
@@ -663,17 +681,19 @@ function showLoadSqlModal() {
 	document.getElementById("loadSqlStatus").textContent = "";
 	document.getElementById("sqlText").focus();
 
-	(document.getElementById("sqlFileInput") as HTMLInputElement).onchange = function (this: HTMLInputElement) {
-		const file = this.files![0];
-		if (!file) return;
-		const reader = new FileReader();
-		reader.onload = (e: ProgressEvent<FileReader>) => {
-			(document.getElementById("sqlText") as HTMLTextAreaElement).value = e.target?.result as string;
-			document.getElementById("loadSqlStatus").textContent =
-				"📄 Loaded " + file.name;
+	(document.getElementById("sqlFileInput") as HTMLInputElement).onchange =
+		function (this: HTMLInputElement) {
+			const file = this.files![0];
+			if (!file) return;
+			const reader = new FileReader();
+			reader.onload = (e: ProgressEvent<FileReader>) => {
+				(document.getElementById("sqlText") as HTMLTextAreaElement).value = e
+					.target?.result as string;
+				document.getElementById("loadSqlStatus").textContent =
+					"📄 Loaded " + file.name;
+			};
+			reader.readAsText(file);
 		};
-		reader.readAsText(file);
-	};
 }
 
 function closeLoadSqlModal() {
@@ -681,15 +701,20 @@ function closeLoadSqlModal() {
 }
 
 function loadSqlFromText() {
-	const sql = (document.getElementById("sqlText") as HTMLTextAreaElement).value.trim();
+	const sql = (
+		document.getElementById("sqlText") as HTMLTextAreaElement
+	).value.trim();
 	if (!sql) {
 		document.getElementById("loadSqlError").textContent =
 			"Please paste SQL or upload a .sql file.";
 		return;
 	}
 	const name =
-		(document.getElementById("sqlDbName") as HTMLInputElement).value.trim() || "Custom Database";
-	const btn = document.querySelector("#sqlModal .btn-primary") as HTMLButtonElement;
+		(document.getElementById("sqlDbName") as HTMLInputElement).value.trim() ||
+		"Custom Database";
+	const btn = document.querySelector(
+		"#sqlModal .btn-primary",
+	) as HTMLButtonElement;
 	const status = document.getElementById("loadSqlStatus");
 	const errorEl = document.getElementById("loadSqlError");
 	errorEl.textContent = "";
@@ -767,7 +792,12 @@ function escHtml(s: unknown): string {
 		.replace(/"/g, "&quot;");
 }
 
-function resultTable(label: string, cols: string[], rows: Record<string, any>[], rowCount: number): string {
+function resultTable(
+	label: string,
+	cols: string[],
+	rows: Record<string, any>[],
+	rowCount: number,
+): string {
 	let html =
 		'<div class="result-box"><div class="result-header">' +
 		label +

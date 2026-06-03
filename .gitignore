@@ -1,4 +1,12 @@
+# Dependencies
 node_modules/
+
+# Build artifacts
 dist/
+public/app.js
+
+# Logs
 *.log
+
+# OS
 .DS_Store
