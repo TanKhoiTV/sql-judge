@@ -41,6 +41,15 @@ npm run dev     # Serve only (no build, assumes app.js is up to date)
 npm test        # Run CLI judge (npx tsx judge.ts)
 ```
 
+## Asset Loading
+
+- `public/app.js` is the compiled JS (from `src/app.ts` via esbuild), loaded by index.html via `<script src="app.js">`.
+- `public/index.html` must NOT contain inline JavaScript beyond small event handler attributes (`onclick`, etc.).
+  All application logic lives in `src/app.ts`. Stale inline JS left in `index.html` will be rendered
+  as raw text by the browser and leak template literal strings onto the page.
+- After editing `src/app.ts`, rebuild with `npm run build` and verify no raw template literals
+  appear in the browser snapshot (`agent-browser snapshot -i`).
+
 ## Formatting Changes
 
 Do not call out or comment on formatting-only diffs (whitespace, line wrapping,
