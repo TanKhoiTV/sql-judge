@@ -41,6 +41,71 @@ npm run dev     # Serve only (no build, assumes app.js is up to date)
 npm test        # Run CLI judge (npx tsx judge.ts)
 ```
 
+## Formatting Changes
+
+Do not call out or comment on formatting-only diffs (whitespace, line wrapping,
+indentation) unless there is a semantic issue mixed in. The edit tool sometimes
+reformats code when applying AST-aware edits. These are noise. Treat them as
+the tool working correctly, not as something to flag or fix.
+
+When a diff shows only formatting changes alongside real edits, commit them
+without mention. Do not add "also reformatted" or "auto-format" to commit
+messages — it is expected behavior.
+
+## Tools & Skills Workflow
+
+### fork (pi-fork)
+
+Use `fork` to offload noisy or exploratory work to a child Pi process that
+inherits the current session branch. Forks return structured 4-section reports:
+Result, Output, Evidence, Learnings. Prefer fork over doing the reading/search
+inline when the task involves:
+
+- Deep codebase exploration or debugging
+- Architecture tradeoff analysis
+- Adversarial review of current changes
+- Implementation validation
+- Parallel option spikes
+
+Call fork with an effort level matching the task:
+```
+fork({ task: "Investigate why the build is slow", effort: "deep" })
+fork({ task: "List all exports in the auth module", effort: "fast" })
+```
+
+### subagent (pi-minimal-subagent)
+
+Use `subagent` for role-based delegation through agent definition files in
+`~/.pi/agent/agents/*.md`. Available agents:
+
+| Agent | When to use |
+|---|---|
+| **scout** | Quick codebase recon — find symbols, map entry points, trace flow |
+| **planner** | Turn requirements + context into a concrete implementation plan |
+| **worker** | Execute a plan with narrow, coherent edits |
+| **reviewer** | Review code quality, security, and UX with fresh eyes |
+| **advisor** | Strategic advice on architecture and product decisions |
+| **researcher** | Web research — searches, evaluates, synthesizes a brief |
+| **oracle** | Catch drift between inherited decisions and current trajectory |
+| **delegate** | Break broad tasks into parallel work bundles |
+| **context-builder** | Examine codebase → comprehensive context document |
+
+Example:
+```
+subagent({ agent: "scout", task: "Map the auth flow in this project" })
+subagent({ agent: "reviewer", task: "Review my current diff for security issues" })
+subagent({ agent: "advisor", task: "Evaluate this architecture for the payment module" })
+```
+
+### General workflow pattern
+
+1. **Scout** unfamiliar areas before reading whole files.
+2. **Fork** noisy exploration or validation to keep main context clean.
+3. **Plan** before implementing non-trivial changes.
+4. **Worker** to implement after a plan is approved.
+5. **Review** changes before committing.
+6. **Advisor** for strategic crossroads or architecture decisions.
+
 ## Versioning
 
 - Version tracked in `VERSION` at project root (copied to `public/VERSION` on changes).
