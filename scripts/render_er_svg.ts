@@ -122,8 +122,16 @@ function assignLayers(
 		dependsOn.set(name, deps);
 	}
 
+	const maxIter = tableNames.length * 3;
+	let iter = 0;
 	let changed = true;
 	while (changed) {
+		iter++;
+		if (iter > maxIter) {
+			throw new Error(
+				"Circular FK dependency detected — topology sort failed to converge.",
+			);
+		}
 		changed = false;
 		for (const name of tableNames) {
 			const deps = dependsOn.get(name)!;
@@ -263,7 +271,6 @@ function drawCard(
 	);
 
 	// Column rows
-	const pkColNames = new Set(info.columns.filter((c) => c.pk).map((c) => c.name));
 	const fkColNames = new Set(info.foreignKeys.map((fk) => fk.from));
 
 	for (let i = 0; i < info.columns.length; i++) {
@@ -296,18 +303,10 @@ function drawCard(
 			),
 		);
 
-		// Column type
+		// Column type (right-aligned)
 		const typeDisplay = c.type.replace(/\(.*\)/, "").toLowerCase();
 		lines.push(
-			svgText(
-				x + TABLE_W - COL_INNER_PAD,
-				cy + COL_H / 2 + 4,
-				typeDisplay,
-				C.typeText,
-				9,
-				"400",
-				"monospace",
-			),
+			`<text x="${x + TABLE_W - COL_INNER_PAD}" y="${cy + COL_H / 2 + 4}" fill="${C.typeText}" font-size="9" font-weight="400" font-family="monospace" text-anchor="end">${escXml(typeDisplay)}</text>`,
 		);
 	}
 
@@ -343,22 +342,24 @@ function drawFK(
 				`<path d="M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}" fill="none" stroke="${lineColor}" stroke-width="1.5" stroke-dasharray="4,3"/>`,
 			);
 
-			// Source cardinality: "many" (o{ — open circle at source end for FK table)
+			// Source cardinality: "many" (child table side — line leaves toward parent)
+			// Layout: [Table] bar ○ ──line──→ || [Parent]
 			const markerR = 4;
+			// Bar closer to table edge
 			lines.push(
-				`<circle cx="${x1 + 8}" cy="${y1}" r="${markerR}" fill="none" stroke="${lineColor}" stroke-width="1.5"/>`,
+				`<line x1="${x1 - 8}" y1="${y1 - 5}" x2="${x1 - 8}" y2="${y1 + 5}" stroke="${lineColor}" stroke-width="1.5"/>`,
 			);
-			// Vertical bar at source
+			// Circle between bar and line
 			lines.push(
-				`<line x1="${x1 + 14}" y1="${y1 - 5}" x2="${x1 + 14}" y2="${y1 + 5}" stroke="${lineColor}" stroke-width="1.5"/>`,
+				`<circle cx="${x1 - 14}" cy="${y1}" r="${markerR}" fill="none" stroke="${lineColor}" stroke-width="1.5"/>`,
 			);
 
-			// Target cardinality: "one" (|| — double bar at parent end)
+			// Target cardinality: "one" (parent table side — line arrives at parent)
 			lines.push(
-				`<line x1="${x2 - 8}" y1="${y2 - 5}" x2="${x2 - 8}" y2="${y2 + 5}" stroke="${lineColor}" stroke-width="1.5"/>`,
+				`<line x1="${x2 + 8}" y1="${y2 - 5}" x2="${x2 + 8}" y2="${y2 + 5}" stroke="${lineColor}" stroke-width="1.5"/>`,
 			);
 			lines.push(
-				`<line x1="${x2 - 14}" y1="${y2 - 5}" x2="${x2 - 14}" y2="${y2 + 5}" stroke="${lineColor}" stroke-width="1.5"/>`,
+				`<line x1="${x2 + 14}" y1="${y2 - 5}" x2="${x2 + 14}" y2="${y2 + 5}" stroke="${lineColor}" stroke-width="1.5"/>`,
 			);
 		}
 	}
@@ -374,7 +375,7 @@ function getColIndex(info: TableInfo, colName: string): number {
 function generate(): void {
 	if (!fs.existsSync(DB_PATH)) {
 		console.error(`Database not found at ${DB_PATH}`);
-		console.error("Run 'npm run build:db' first.");
+		console.error('Run the database creation script first: npx tsx scripts/create_db.ts');
 		process.exit(1);
 	}
 

@@ -255,9 +255,10 @@ dependencies, then lays them out left-to-right.
    case. For custom databases, mermaid is lazy-loaded via dynamic `<script>`
    injection only when the user clicks the ER tab.
 
-2. **Script `defer`** — All `<script>` tags in `<head>` use `defer`, so the
-   browser parses and renders the HTML immediately without blocking on script
-   download/execution.
+2. **Script `defer`** — The application script (`app.js`) uses `defer`, so the
+   browser parses and renders the HTML immediately without blocking on its
+   download/execution. (CDN scripts for sql.js and CodeMirror load without
+   `defer` — they're needed before app.js runs.)
 
 3. **Parallel `init()` fetches** — `VERSION` and `exercises.json` are fetched
    concurrently (both are independent of the WASM/DB loading chain).

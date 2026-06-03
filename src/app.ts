@@ -29,6 +29,7 @@ let activeDbName = "Unilever Product Management";
 let activeDbId = "unilever";
 let allExerciseDefs: any[] = [];
 let _bottomResizeTimer: any = null;
+let _mermaidLoading = false;
 
 // ─── SQL.js helpers ────────────────────────────────────────────────────────
 function runQuery(sql: string): any {
@@ -434,7 +435,7 @@ function renderERDiagram() {
 	// Preset database — serve static pre-rendered SVG
 	if (activeDbId === "unilever") {
 		container.innerHTML =
-			'<div style="text-align:center"><img src="db/Unilever_Product_Management.er.svg" alt="ER diagram" style="max-width:100%;height:auto" /></div>';
+			'<div style="text-align:center"><img src="db/Unilever_Product_Management.er.svg" alt="Entity-relationship diagram of the Unilever Product Management database showing 11 tables and their foreign key relationships" style="max-width:100%;height:auto" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\'" /><div style="display:none;color:#ff7b72;padding:20px;text-align:center">ER diagram image not available. Run <code>npm run build:er</code> to generate it.</div></div>';
 		return;
 	}
 
@@ -443,25 +444,29 @@ function renderERDiagram() {
 }
 
 function doRenderMermaid(container: HTMLElement): void {
-	if (typeof mermaid === "undefined") {
+	if (typeof mermaid === "undefined" && !_mermaidLoading) {
 		container.innerHTML =
 			'<div style="color:#8b949e;padding:20px;text-align:center">⏳ Loading diagram renderer...</div>';
 
+		_mermaidLoading = true;
 		const script = document.createElement("script");
 		script.src =
 			"https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js";
 		script.onload = () => {
+			_mermaidLoading = false;
 			mermaid.initialize({ theme: "dark", startOnLoad: false });
 			renderMermaidFromSchema(container);
 		};
 		script.onerror = () => {
+			_mermaidLoading = false;
 			container.innerHTML =
 				'<div style="color:#ff7b72;padding:20px;">Failed to load ER diagram renderer from CDN.</div>';
 		};
 		document.head.appendChild(script);
-	} else {
+	} else if (typeof mermaid !== "undefined") {
 		renderMermaidFromSchema(container);
 	}
+	// If _mermaidLoading is true, the loading message is already shown; do nothing
 }
 
 function renderMermaidFromSchema(container: HTMLElement): void {
