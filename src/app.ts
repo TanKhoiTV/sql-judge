@@ -407,7 +407,11 @@ function renderTableCards() {
 	container.innerHTML = html;
 }
 
-// ─── Schema viewer (ER diagram via Mermaid) ────────────────────────────────
+// ─── Schema viewer (ER diagram) ────────────────────────────────────────────
+// Hybrid approach:
+//   - Preset DB (Unilever) → static pre-rendered SVG (zero JS cost)
+//   - Custom DB            → lazy-load mermaid.js on demand
+
 function renderERDiagram() {
 	if (!schemaData) {
 		const container = document.getElementById("mermaidContainer");
@@ -423,8 +427,44 @@ function renderERDiagram() {
 				'<div style="color:#8b949e;padding:20px;text-align:center">No tables found.</div>';
 		return;
 	}
-	const container = document.getElementById("mermaidContainer");
 
+	const container = document.getElementById("mermaidContainer");
+	if (!container) return;
+
+	// Preset database — serve static pre-rendered SVG
+	if (activeDbId === "unilever") {
+		container.innerHTML =
+			'<div style="text-align:center"><img src="db/Unilever_Product_Management.er.svg" alt="ER diagram" style="max-width:100%;height:auto" /></div>';
+		return;
+	}
+
+	// Custom database — lazy-load mermaid on demand
+	doRenderMermaid(container);
+}
+
+function doRenderMermaid(container: HTMLElement): void {
+	if (typeof mermaid === "undefined") {
+		container.innerHTML =
+			'<div style="color:#8b949e;padding:20px;text-align:center">⏳ Loading diagram renderer...</div>';
+
+		const script = document.createElement("script");
+		script.src =
+			"https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js";
+		script.onload = () => {
+			mermaid.initialize({ theme: "dark", startOnLoad: false });
+			renderMermaidFromSchema(container);
+		};
+		script.onerror = () => {
+			container.innerHTML =
+				'<div style="color:#ff7b72;padding:20px;">Failed to load ER diagram renderer from CDN.</div>';
+		};
+		document.head.appendChild(script);
+	} else {
+		renderMermaidFromSchema(container);
+	}
+}
+
+function renderMermaidFromSchema(container: HTMLElement): void {
 	let mmd = "erDiagram\n";
 
 	for (const [name, info] of Object.entries(schemaData)) {
@@ -996,7 +1036,6 @@ function resultTable(
 }
 
 // ─── Init ──────────────────────────────────────────────────────────────────
-mermaid.initialize({ theme: "dark", startOnLoad: false });
 
 async function init() {
 	// Load version first so badge always displays

@@ -4,6 +4,7 @@ node_modules/
 # Build artifacts
 dist/
 public/app.js
+public/db/*.er.svg
 
 # Logs
 *.log

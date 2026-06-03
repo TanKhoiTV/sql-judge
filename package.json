@@ -1,10 +1,12 @@
 {
   "name": "database-schema-data-extraction-2026-06-03",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "",
   "type": "module",
   "scripts": {
-    "build": "esbuild src/app.ts --outfile=public/app.js --platform=browser --target=es2020 --minify",
+    "build:er": "npx tsx scripts/render_er_svg.ts",
+    "build:js": "esbuild src/app.ts --outfile=public/app.js --platform=browser --target=es2020 --minify",
+    "build": "npm run build:er && npm run build:js",
     "start": "npm run build && npx http-server public -p 3000 -c-1 --cors",
     "dev": "npx http-server public -p 3000 -c-1 --cors",
     "test": "npx tsx judge.ts",
