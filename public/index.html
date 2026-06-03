@@ -251,6 +251,26 @@
         flex-direction: column;
         min-width: 0;
       }
+      .version-badge {
+        position: fixed;
+        bottom: 8px;
+        right: 12px;
+        padding: 3px 10px;
+        font-size: 11px;
+        font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+        color: #8b949e;
+        background: #161b22;
+        border: 1px solid #30363d;
+        border-radius: 6px;
+        z-index: 1000;
+        cursor: default;
+        user-select: none;
+        opacity: 0.7;
+        transition: opacity 0.2s;
+      }
+      .version-badge:hover {
+        opacity: 1;
+      }
       .topbar {
         padding: 10px 24px;
         border-bottom: 1px solid #30363d;
@@ -1367,6 +1387,16 @@
 
       // ─── Init ──────────────────────────────────────────────────────────────────
       mermaid.initialize({ theme: "dark", startOnLoad: false });
+
+      async function loadVersion() {
+        try {
+          const res = await fetch("/api/version");
+          const data = await res.json();
+          document.getElementById("versionBadge").textContent = "v" + data.version;
+        } catch {}
+      }
+
+      loadVersion();
       loadDbStatus();
       loadExercises();
       loadSchemaData().then(() => {
@@ -1424,5 +1454,6 @@
         <div class="modal-error" id="loadSqlError"></div>
       </div>
     </div>
+    <div class="version-badge" id="versionBadge">v0.0.0</div>
   </body>
 </html>

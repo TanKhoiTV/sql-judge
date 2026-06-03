@@ -7,6 +7,16 @@ const app = express();
 app.use(express.json({ limit: "10mb" }));
 app.use(express.static(path.join(__dirname, "public")));
 
+const VERSION_PATH = path.join(__dirname, "VERSION");
+
+function getVersion() {
+	try {
+		return fs.readFileSync(VERSION_PATH, "utf8").trim();
+	} catch {
+		return "0.0.0";
+	}
+}
+
 const DEFAULT_DB_PATH = path.join(__dirname, "Unilever_Product_Management.db");
 const CUSTOM_DB_PATH = path.join(__dirname, "custom.db");
 const EXERCISES_PATH = path.join(__dirname, "exercises", "exercises.json");
@@ -142,6 +152,12 @@ function compareResults(user, ref) {
 
 app.get("/api/db-status", (_req, res) => {
 	res.json(getDbStatus());
+});
+
+// ─── API: Version ─────────────────────────────────────────────────────────
+
+app.get("/api/version", (_req, res) => {
+	res.json({ version: getVersion() });
 });
 
 app.post("/api/load-sql", (req, res) => {
