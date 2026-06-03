@@ -61,6 +61,48 @@ When a diff shows only formatting changes alongside real edits, commit them
 without mention. Do not add "also reformatted" or "auto-format" to commit
 messages — it is expected behavior.
 
+## Problem-Solving Discipline
+
+### Blockers
+
+When stuck on an implementation problem, follow this order:
+
+1. **Check existing skills** — Read the relevant skill files under
+   `~/.pi/agent/skills/` and `~/.agents/skills/`. The tool definitions in your
+   system prompt list available skills with descriptions; read the matching
+   `SKILL.md` for full instructions.
+
+2. **Web search** — Perform a targeted web search for the specific error,
+   library API, or pattern. Use concrete search terms (framework + version +
+   error message).
+
+3. **Only then implement** — Never guess a workaround or fabricate an API.
+   Research first.
+
+### Deep-rooted Errors
+
+When a bug resists diagnosis after a reasonable attempt:
+
+- Launch a **debugging subagent** (delegate or worker) with the specific
+debugger tools included (e.g., `agent-browser` for UI inspection, `node
+--inspect` for Node.js, LSP diagnostics for TypeScript).
+- State the error, what you've tried, and what debugger tools the subagent
+should use.
+- Do not chase the bug in the main context — isolate it in a subagent that
+has a clean context window.
+
+### Code Architecture
+
+- **Separation of concerns** — Keep UI, data access, and business logic in
+distinct modules/functions. A view function should not directly mutate the
+database. A data function should not manipulate the DOM.
+
+- **State vs. logic** — Module-level variables hold state (current database,
+selected exercise, active tab). Pure functions and event handlers contain
+logic. State mutations happen at clear boundaries (after data loads, user
+clicks, database swaps), not scattered inside rendering helpers. This makes
+behavior predictable and bugs easier to trace.
+
 ## Tools & Skills Workflow
 
 ### fork (pi-fork)
