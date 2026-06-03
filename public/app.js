@@ -84,9 +84,7 @@ function compareResults(user, ref) {
     }
   }
   if (user.rowCount !== ref.rowCount) {
-    issues.push(
-      "Expected " + ref.rowCount + " row(s), got " + user.rowCount
-    );
+    issues.push("Expected " + ref.rowCount + " row(s), got " + user.rowCount);
   }
   const colCount = Math.min(user.cols.length, ref.cols.length);
   const userSet = new Set(
@@ -109,12 +107,8 @@ function compareResults(user, ref) {
   return { pass: issues.length === 0, issues };
 }
 function showSidebar(panel) {
-  document.querySelectorAll(".sidebar-tab").forEach(
-    (t) => t.classList.toggle("active", t.dataset.panel === panel)
-  );
-  document.querySelectorAll(".sidebar-panel").forEach(
-    (p) => p.classList.toggle("active", p.id === "panel-" + panel)
-  );
+  document.querySelectorAll(".sidebar-tab").forEach((t) => t.classList.toggle("active", t.dataset.panel === panel));
+  document.querySelectorAll(".sidebar-panel").forEach((p) => p.classList.toggle("active", p.id === "panel-" + panel));
 }
 function loadExercises() {
   if (activeDbId !== "unilever") {
@@ -174,10 +168,7 @@ function createEditor(containerId, initialValue) {
     }
   });
   editor.on("change", () => {
-    editor.setSize(
-      null,
-      Math.max(120, editor.getScrollInfo().height + 10)
-    );
+    editor.setSize(null, Math.max(120, editor.getScrollInfo().height + 10));
   });
   editor.on("inputRead", (cm, change) => {
     if (change.text.length === 1 && /[a-zA-Z._]/.test(change.text[0])) {
@@ -271,8 +262,7 @@ function renderERDiagram() {
       const cType = c.type.toLowerCase().replace(/\(.*/, "");
       const tags = [];
       if (c.pk) tags.push("PK");
-      if (info.foreignKeys.some((f) => f.from === c.name))
-        tags.push("FK");
+      if (info.foreignKeys.some((f) => f.from === c.name)) tags.push("FK");
       const tagStr = tags.length > 0 ? " " + tags.join(", ") : "";
       mmd += `    ${cType} ${c.name}${tagStr}
 `;
@@ -295,9 +285,7 @@ function renderERDiagram() {
   }
 }
 function showSchemaView(view) {
-  document.querySelectorAll(".schema-tab").forEach(
-    (t) => t.classList.toggle("active", t.dataset.stab === view)
-  );
+  document.querySelectorAll(".schema-tab").forEach((t) => t.classList.toggle("active", t.dataset.stab === view));
   document.querySelectorAll(".schema-view").forEach((s) => s.classList.toggle("active", s.id === "sv-" + view));
   if (view === "er" && schemaData) {
     setTimeout(() => renderERDiagram(), 100);
@@ -444,8 +432,7 @@ function renderJudgeResults(data) {
   } else {
     html += `<div class="result-box"><div class="result-header fail">\u274C FAIL \u2014 ${data.issues.length} issue(s)</div>`;
     html += `<div class="issues"><ul>${data.issues.map((i) => "<li>" + escHtml(i) + "</li>").join("")}</ul></div>`;
-    if (data.hint)
-      html += `<div class="hint">\u{1F4A1} ${escHtml(data.hint)}</div>`;
+    if (data.hint) html += `<div class="hint">\u{1F4A1} ${escHtml(data.hint)}</div>`;
     html += `</div>`;
   }
   html += `<div class="solution">
@@ -516,7 +503,7 @@ function showLoadSqlModal() {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (e) => {
-      document.getElementById("sqlText").value = e.target.result;
+      document.getElementById("sqlText").value = e.target?.result;
       document.getElementById("loadSqlStatus").textContent = "\u{1F4C4} Loaded " + file.name;
     };
     reader.readAsText(file);
