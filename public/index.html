@@ -929,16 +929,13 @@
       mermaid.initialize({ theme: "dark", startOnLoad: false });
 
       async function init() {
-        // Initialize sql.js (loads WASM)
+        // Load version first so badge always displays
         try {
-          SQL = await initSqlJs();
-        } catch (e) {
-          document.getElementById("mainContent").innerHTML =
-            '<div class="question" style="text-align:center;color:#ff7b72;padding:60px 20px;"><h3>❌ Failed to load SQL engine: ' +
-            escHtml(e.message) +
-            "</h3></div>";
-          return;
-        }
+          const vRes = await fetch("VERSION");
+          const vText = await vRes.text();
+          document.getElementById("versionBadge").textContent =
+            "v" + vText.trim();
+        } catch {}
 
         // Load exercises JSON
         try {
@@ -946,13 +943,23 @@
           allExerciseDefs = await exRes.json();
         } catch {}
 
-        // Load version
+        // Initialize sql.js (loads WASM from CDN)
         try {
-          const vRes = await fetch("VERSION");
-          const vText = await vRes.text();
-          document.getElementById("versionBadge").textContent =
-            "v" + vText.trim();
-        } catch {}
+          SQL = await initSqlJs({
+            locateFile: function (file) {
+              return (
+                "https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.11.0/" +
+                file
+              );
+            },
+          });
+        } catch (e) {
+          document.getElementById("mainContent").innerHTML =
+            '<div class="question" style="text-align:center;color:#ff7b72;padding:60px 20px;"><h3>❌ Failed to load SQL engine: ' +
+            escHtml(e.message) +
+            "</h3></div>";
+          return;
+        }
 
         // Load default database from binary .db file
         try {
