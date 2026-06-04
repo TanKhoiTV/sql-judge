@@ -9,22 +9,34 @@ public/                     # Web app (http-server serves this directory)
 ├── index.html              # Main page (HTML structure, no inline JS)
 ├── app.js                  # Compiled JS (from src/app.ts via esbuild)
 ├── style.css               # All styles
+├── vendor/                 # Self-hosted vendor libs (CodeMirror, sql.js)
 ├── db/
-│   └── Unilever_Product_Management.db   # Pre-built SQLite database (asset)
+│   ├── Unilever_Product_Management.db   # Pre-built SQLite database (asset)
+│   ├── Unilever_Product_Management.er.svg  # Static ER diagram
+│   └── Unilever_Product_Management.descriptions.json  # Column descriptions
 ├── exercises/
 │   └── exercises.json      # Exercise definitions
-└── VERSION                 # Version displayed in UI
+└── VERSION                 # Version displayed in UI (generated from package.json)
 
 src/                        # TypeScript source
-└── app.ts                  # Browser app logic (compiled → public/app.js)
+├── app.ts                  # Browser app logic (compiled → public/app.js)
+├── lib.ts                  # Shared: compareResults, normalizeValue, types
+
+tests/                      # Vitest unit/integration tests
+└── unit/
+    └── compareResults.test.ts  # Judge algorithm tests
 
 scripts/                    # Development/CI helper scripts (TypeScript)
 ├── create_db.ts            # Rebuild the .db from the .sql script
+├── write_version.ts        # Write package.json version → public/VERSION
+├── render_er_svg.ts        # Generate static ER diagram SVG
+├── extract_descriptions.ts # Extract SQL comment descriptions
+├── gzip_assets.ts          # Gzip static assets for deployment
 └── Unilever_Product_Management.sqlite.sql  # SQLite schema + data + triggers
 
 judge.ts                    # CLI judge (run with tsx from project root)
 tsconfig.json               # TypeScript configuration
-VERSION                     # Canonical version (syncs with public/VERSION)
+vitest.config.ts            # Vitest test runner config
 ```
 
 - SQL executed in-browser via **sql.js** (SQLite compiled to WASM)
@@ -35,11 +47,34 @@ VERSION                     # Canonical version (syncs with public/VERSION)
 ## Running
 
 ```bash
-npm run build   # Compile src/app.ts → public/app.js
-npm start       # Build + serve on port 3000
-npm run dev     # Serve only (no build, assumes app.js is up to date)
-npm test        # Run CLI judge (npx tsx judge.ts)
+npm run build       # Full build: preset DB + app (build:preset && build:app)
+npm run build:app   # Fast dev build: typecheck → version → JS → CSS → gzip
+npm run build:preset # Rebuild preset DB artifacts only (db + er + schema)
+npm start           # build:app + serve on port 3000
+npm run dev         # Serve only (no build, assumes assets are up to date)
+npm test            # Run vitest unit tests
+npm run test:cli    # Run CLI judge (npx tsx judge.ts)
+npm run qa          # Run QA agent (build + test + smoke check — see qa subagent)
 ```
+
+## Build Pipeline
+
+Build scripts are split into two groups:
+
+| Group | Scripts | When to run |
+|---|---|---|
+| **build:preset** | `build:db` → `build:er` → `build:schema` | Only when SQL schema changes (rare) |
+| **build:app** | `typecheck` → `build:version` → `build:js` → `build:css` → `build:gz` | Every code edit (fast) |
+
+`npm run build` runs both sequentially. `npm start` runs only `build:app` for a fast dev loop.
+
+- `build:version` reads `package.json` version and writes `public/VERSION` (single source of truth)
+- `build:db` creates SQLite `.db` from `scripts/*.sqlite.sql`
+- `build:er` generates static ER diagram SVG from `.db`
+- `build:schema` extracts table/column descriptions from `.sql` comments
+- `build:js` compiles `src/app.ts` (bundles `src/lib.ts`) via esbuild
+- `build:css` minifies `style.css`
+- `build:gz` gzips all static assets at max compression
 
 ## Asset Loading
 
@@ -159,10 +194,12 @@ subagent({ agent: "advisor", task: "Evaluate this architecture for the payment m
 
 ## Versioning
 
-- Version tracked in `VERSION` at project root (copied to `public/VERSION` on changes).
+- **Single source of truth**: `package.json` version field.
+- `npm run build:version` writes `package.json` version → `public/VERSION` (served to web UI).
 - Version badge displayed at bottom-right corner of the web UI.
 - **ANY change** bumps version per semantic versioning (`MAJOR.MINOR.PATCH`).
 - **Never aggregate changes from different builds** — each change session gets its own version bump in a separate commit.
+- When bumping: edit `package.json`'s `version` field. `build:version` syncs it to `public/VERSION`.
 
 ## Conventional Commits
 
@@ -179,6 +216,40 @@ Types: `feat` (new feature), `fix` (bug fix), `docs` (documentation),
 `perf` (performance), `test` (tests), `chore` (tooling, infra, config).
 
 Scope is optional but encouraged (e.g., `judge`, `ui`, `db`, `scripts`, `docs`).
+
+## QA Pipeline
+
+Use the **qa** subagent after any code change:
+
+```
+subagent({ agent: "qa", task: "Run QA checks on the SQL Judge project" })
+```
+
+The QA agent runs:
+1. `npm run build` — full build
+2. `npm test` — vitest unit tests (judge algorithm, value normalization)
+3. CLI judge smoke tests (PASS + FAIL scenarios)
+4. Build artifact validation (public/VERSION, .db, app.js, .er.svg)
+5. `npm run typecheck` — TypeScript type checking
+6. Git status check for uncommitted changes
+
+### Test Structure
+
+```
+tests/
+├── unit/
+│   └── compareResults.test.ts   # Pure-function tests for judge algorithm
+├── integration/                 # CLI + DB integration tests (future)
+└── build/                       # Artifact validation (future)
+```
+
+Run tests: `npm test` (vitest).
+
+### Working with Tests
+
+- `npm test` — run all tests once (CI mode)
+- `npm vitest` — run tests in watch mode (dev)
+- Tests import `compareResults` and `normalizeValue` from `src/lib.ts`, the same shared module used by both the CLI judge and the browser judge. A test that passes guarantees the algorithm is correct in both environments.
 
 Examples:
 ```

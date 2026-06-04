@@ -48,25 +48,36 @@ common case while keeping full ER diagram support for user-uploaded databases.
 public/                          # Served by http-server (the web app)
 ├── index.html                   # Main HTML
 ├── style.css                    # All styles
+├── style.min.css                # Minified CSS (build artifact)
 ├── app.js                       # Compiled JS (from src/app.ts, gitignored)
+├── vendor/                      # Self-hosted libraries (CodeMirror, sql.js)
 ├── db/
 │   ├── Unilever_Product_Management.db   # Pre-built SQLite database file
-│   └── Unilever_Product_Management.er.svg  # Pre-rendered ER diagram (build-time)
+│   ├── Unilever_Product_Management.er.svg  # Pre-rendered ER diagram (build-time)
+│   └── Unilever_Product_Management.descriptions.json  # Column descriptions
 ├── exercises/
 │   └── exercises.json           # 13 exercise definitions with solutions
-└── VERSION                      # Version string displayed in UI
+└── VERSION                      # Version string displayed in UI (generated)
 
 src/                             # TypeScript source
-└── app.ts                       # Browser app logic (compiled → public/app.js)
+├── app.ts                       # Browser app logic (compiled → public/app.js)
+└── lib.ts                       # Shared: compareResults, normalizeValue, types
+
+tests/                           # Vitest test suite
+└── unit/
+    └── compareResults.test.ts   # 25+ tests for judge algorithm
 
 scripts/                         # Development helper scripts
 ├── create_db.ts                 # Rebuilds .db from the .sqlite.sql file
-├── Unilever_Product_Management.sqlite.sql  # Full schema + data + triggers
-└── render_er_svg.ts             # Generates static ER diagram SVG from .db file
+├── write_version.ts             # Reads package.json → writes public/VERSION
+├── render_er_svg.ts             # Generates static ER diagram SVG from .db file
+├── extract_descriptions.ts      # Parses SQL comments → descriptions.json
+├── gzip_assets.ts               # Gzips all static assets
+└── Unilever_Product_Management.sqlite.sql  # Full schema + data + triggers
 
 judge.ts                         # CLI judge (runs on Node.js)
-VERSION                          # Canonical version (copied to public/VERSION)
-package.json                     # http-server + dev tooling
+package.json                     # Single source of truth for version
+vitest.config.ts                 # Test runner configuration
 AGENTS.md                        # Pi coding agent project instructions
 ```
 
@@ -184,37 +195,52 @@ The SQLite schema enforces several constraints beyond basic PK/FK:
 
 ## Versioning
 
-- Canonical version in root `VERSION` file (plain text, semver).
-- `public/VERSION` is a copy served to the web UI.
+- **Single source of truth**: `package.json` version field.
+- `npm run build:version` reads `package.json` and writes `public/VERSION`.
 - Version badge renders at bottom-right of the page.
 - Every change session must bump the version in a separate commit. No aggregation of unrelated changes.
 
 ## CLI Judge
 
-The CLI (`judge.js`) mirrors the browser judge logic using `node:sqlite` (built into Node.js 24+). Same comparison algorithm, same exercise file, same database.
+The CLI (`judge.ts`) mirrors the browser judge logic using `node:sqlite` (built into Node.js 24+). Both use the same `compareResults()` from `src/lib.ts`. Same exercise file, same database.
 
 ```bash
-node judge.js list
-node judge.js solve 03-simple-join "YOUR QUERY"
-node judge.js show 09-subquery
-node judge.js random
+npx tsx judge.ts list
+npx tsx judge.ts solve 03-simple-join "YOUR QUERY"
+npx tsx judge.ts show 09-subquery
+npx tsx judge.ts random
 ```
 
-## Rebuilding the Database
+## Build Pipeline
+
+The build is split into two groups:
+
+| Command | Steps | When to use |
+|---|---|---|
+| `npm run build:preset` | `build:db` → `build:er` → `build:schema` | Only when SQL schema changes |
+| `npm run build:app` | `typecheck` → `build:version` → `build:js` → `build:css` → `build:gz` | Every code edit (fast dev loop) |
+| `npm run build` | `build:preset` + `build:app` | Full CI / deploy |
+| `npm start` | `build:app` + start http-server | Development |
+
+### Build Steps in Detail
+
+1. **`build:version`** — `scripts/write_version.ts` reads `package.json` version and writes `public/VERSION`
+2. **`build:db`** — `scripts/create_db.ts` reads `scripts/*.sqlite.sql` → produces `public/db/Unilever_Product_Management.db` via Node 24 `DatabaseSync`
+3. **`build:er`** — `scripts/render_er_svg.ts` reads `.db` → produces `public/db/Unilever_Product_Management.er.svg` (pure SVG, no dependencies)
+4. **`build:schema`** — `scripts/extract_descriptions.ts` parses `/* */` comments from `.sql` → produces `public/db/Unilever_Product_Management.descriptions.json`
+5. **`typecheck`** — `tsc --noEmit` (zero errors required)
+6. **`build:js`** — `esbuild src/app.ts` (bundles `src/lib.ts`) → `public/app.js`
+7. **`build:css`** — `esbuild public/style.css --minify` → `public/style.min.css`
+8. **`build:gz`** — `scripts/gzip_assets.ts` walks `public/` and gzips all HTML/CSS/JS/JSON/SVG
+
+## Testing
 
 ```bash
-node scripts/create_db.js
+npm test            # vitest run — 25+ tests for judge algorithm
+npm run test:cli    # npx tsx judge.ts — CLI judge smoke test
 ```
 
-This reads `scripts/Unilever_Product_Management.sqlite.sql` and produces a fresh `public/db/Unilever_Product_Management.db`. The script also prints verification output — row counts, product catalog, team mappings, and invoices.
-
-## Build Chain
-
-```bash
-npm run build    # Full build: ER SVG → app.js
-npm run build:er # ER diagram SVG only
-npm run build:js # app.js only (esbuild)
-```
+Unit tests import `compareResults` and `normalizeValue` from `src/lib.ts`, the same shared module used by both the CLI judge and the browser judge (bundled via esbuild). A test that passes guarantees the algorithm is correct in both environments.
 
 - `build:er` runs `tsx scripts/render_er_svg.ts` which reads the `.db` file and
   generates a static SVG with table cards, columns, keys, and FK relationship
