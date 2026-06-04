@@ -82,17 +82,11 @@ function updateExerciseListProgress(): void {
 		const id = (el as HTMLElement).dataset.id;
 		if (!id) return;
 		const rec = progress[id];
-		const badge = el.querySelector(".progress-badge");
+		el.classList.remove("completed", "failed");
 		if (rec && rec.passCount > 0) {
 			el.classList.add("completed");
-			if (badge)
-				badge.textContent = "✅ " + rec.passCount + "/" + rec.attemptCount;
-		} else if (rec) {
-			el.classList.remove("completed");
-			if (badge) badge.textContent = "🔄 " + rec.attemptCount;
-		} else {
-			el.classList.remove("completed");
-			if (badge && badge.parentNode) badge.parentNode.removeChild(badge);
+		} else if (rec && rec.attemptCount > 0) {
+			el.classList.add("failed");
 		}
 	});
 }
@@ -312,15 +306,12 @@ function loadExercises() {
 	document.getElementById("exerciseList").innerHTML = exercises
 		.map((e: any) => {
 			const rec = progress[e.id];
-			const badgeHtml = rec
-				? rec.passCount > 0
-					? `<span class="progress-badge completed-badge">✅ ${rec.passCount}/${rec.attemptCount}</span>`
-					: `<span class="progress-badge attempted-badge">🔄 ${rec.attemptCount}</span>`
-				: "";
-			return `<div class="exercise-item${rec && rec.passCount > 0 ? " completed" : ""}" data-id="${escHtml(e.id)}" onclick="selectExercise('${escHtml(e.id)}')">
+			let cls = "exercise-item";
+			if (rec && rec.passCount > 0) cls += " completed";
+			else if (rec && rec.attemptCount > 0) cls += " failed";
+			return `<div class="${cls}" data-id="${escHtml(e.id)}" onclick="selectExercise('${escHtml(e.id)}')">
       <div class="title">${escHtml(e.title)}</div>
       <div class="meta"><span class="diff-badge diff-${escHtml(e.difficulty)}">${escHtml(e.difficulty)}</span>${escHtml(e.id)}</div>
-      ${badgeHtml}
     </div>`;
 		})
 		.join("");
@@ -384,9 +375,7 @@ function createEditor(containerId: string, initialValue: string): any {
 	// Only resize the editor when the number of lines actually changes
 	// (newlines, pasted multi-line text, or line merges from delete/backspace)
 	editor.on("change", (cm, change) => {
-		const oldLines = change.removed
-			? change.removed.split("\n").length
-			: 1;
+		const oldLines = change.removed ? change.removed.split("\n").length : 1;
 		const newLines = change.text.length;
 		if (oldLines !== newLines) {
 			cm.setSize(null, Math.max(120, cm.getScrollInfo().height + 10));

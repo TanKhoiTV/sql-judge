@@ -80,21 +80,19 @@ body {
 .exercise-item.completed .title {
 	color: #7ee787;
 }
-.progress-badge {
-	float: right;
-	font-size: 10px;
-	padding: 1px 6px;
-	border-radius: 8px;
-	margin-top: 2px;
-	font-weight: 500;
+.exercise-item.failed {
+	border-left-color: #da3633;
+	background: #271111;
 }
-.completed-badge {
-	background: #1f6f31;
-	color: #7ee787;
+.exercise-item.failed .title {
+	color: #f87171;
 }
-.attempted-badge {
-	background: #21262d;
-	color: #8b949e;
+.exercise-item.active.failed {
+	border-left-color: #da3633;
+	background: #271111;
+}
+.exercise-item.active.failed .title {
+	color: #f87171;
 }
 .exercise-item:hover {
 	background: #21262d;
