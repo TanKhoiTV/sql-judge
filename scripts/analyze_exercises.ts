@@ -30,9 +30,13 @@ function getTableSchema(): Record<string, string[]> {
 	if (_tableSchema) return _tableSchema;
 	const db = new DatabaseSync(DB_PATH);
 	const result: Record<string, string[]> = {};
-	const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").all() as { name: string }[];
+	const tables = db
+		.prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
+		.all() as { name: string }[];
 	for (const t of tables) {
-		const cols = db.prepare(`PRAGMA table_info('${t.name}')`).all() as { name: string }[];
+		const cols = db.prepare(`PRAGMA table_info('${t.name}')`).all() as {
+			name: string;
+		}[];
 		result[t.name] = cols.map((c) => c.name);
 	}
 	db.close();
@@ -53,17 +57,27 @@ function detectTechniques(sol: string): string[] {
 	if (/SELECT\s+DISTINCT/.test(s)) tags.push("DISTINCT");
 	if (/\bLEFT\s+JOIN\b/.test(s)) tags.push("LEFT JOIN");
 	if (/\bJOIN\b/.test(s) && !/LEFT\s+JOIN/.test(s)) tags.push("INNER JOIN");
-	if (/\bSELF\s*JOIN\b/i.test(sol) || /FROM\s+\w+\s+(AS\s+)?[ab]\s+(INNER\s+)?JOIN\s+\w+\s+(AS\s+)?[ab]\b/i.test(s)) {
+	if (
+		/\bSELF\s*JOIN\b/i.test(sol) ||
+		/FROM\s+\w+\s+(AS\s+)?[ab]\s+(INNER\s+)?JOIN\s+\w+\s+(AS\s+)?[ab]\b/i.test(
+			s,
+		)
+	) {
 		// Heuristic: same table on both sides of JOIN
 		const m = sol.match(/FROM\s+(\w+)\s+(?:AS\s+)?(\w+)/i);
 		if (m) {
 			const alias = m[2];
-			if (new RegExp(`JOIN\\s+${m[1]}\\s+(?:AS\\s+)?(?!${alias})\\w+`, "i").test(sol)) {
+			if (
+				new RegExp(`JOIN\\s+${m[1]}\\s+(?:AS\\s+)?(?!${alias})\\w+`, "i").test(
+					sol,
+				)
+			) {
 				tags.push("SELF-JOIN");
 			}
 		}
 	}
-	if (/\bGROUP\s+BY\b/.test(s) && /\bHAVING\b/.test(s)) tags.push("GROUP BY + HAVING");
+	if (/\bGROUP\s+BY\b/.test(s) && /\bHAVING\b/.test(s))
+		tags.push("GROUP BY + HAVING");
 	else if (/\bGROUP\s+BY\b/.test(s)) tags.push("GROUP BY");
 	if (/\bLIMIT\b/.test(s)) tags.push("LIMIT");
 	if (/\bUNION\b/.test(s)) tags.push("UNION/ALL");
@@ -77,39 +91,66 @@ function detectTechniques(sol: string): string[] {
 	if (/\bEXISTS\b/.test(s) && !/NOT\s+EXISTS/.test(s)) tags.push("EXISTS");
 	if (/\bNOT\s+EXISTS\b/.test(s)) tags.push("NOT EXISTS");
 	if (/\bIN\s*\(/.test(s) && /\bSELECT\b/.test(s)) tags.push("IN (subquery)");
-	if (/\bNOT\s+IN\s*\(/.test(s) && /\bSELECT\b/.test(s)) tags.push("NOT IN (subquery)");
+	if (/\bNOT\s+IN\s*\(/.test(s) && /\bSELECT\b/.test(s))
+		tags.push("NOT IN (subquery)");
 	if (/FROM\s*\(/.test(s)) tags.push("Derived table (FROM)");
-	if (/\(\s*SELECT\b/.test(s) && /\)\s*AS\b/.test(s)) tags.push("Scalar subquery");
-	if (/\bROW_NUMBER\b/.test(s) || /\bRANK\b/.test(s) || /\bOVER\s*\(/.test(s)) tags.push("Window function");
+	if (/\(\s*SELECT\b/.test(s) && /\)\s*AS\b/.test(s))
+		tags.push("Scalar subquery");
+	if (/\bROW_NUMBER\b/.test(s) || /\bRANK\b/.test(s) || /\bOVER\s*\(/.test(s))
+		tags.push("Window function");
 
 	return [...new Set(tags)];
 }
 
 // ─── Table grouping for matrix columns ─────────────────────────────────────
 const ALL_TABLES = [
-	"HANG_HOA", "HOA_DON", "CTHD", "DAI_LY", "NHOM_HANG",
-	"NHAN_VIEN", "PHIEU_XUAT", "CTPX", "DOI",
-	"HINH_THUC_DONG_GOI", "LOAI_NV",
+	"HANG_HOA",
+	"HOA_DON",
+	"CTHD",
+	"DAI_LY",
+	"NHOM_HANG",
+	"NHAN_VIEN",
+	"PHIEU_XUAT",
+	"CTPX",
+	"DOI",
+	"HINH_THUC_DONG_GOI",
+	"LOAI_NV",
 ];
 
 const SHORT = {
-	HANG_HOA: "HH", HOA_DON: "HD", CTHD: "CTHD", DAI_LY: "DL",
-	NHOM_HANG: "NH", NHAN_VIEN: "NV", PHIEU_XUAT: "PX", CTPX: "CTPX",
-	DOI: "DOI", HINH_THUC_DONG_GOI: "HTDG", LOAI_NV: "LNV",
+	HANG_HOA: "HH",
+	HOA_DON: "HD",
+	CTHD: "CTHD",
+	DAI_LY: "DL",
+	NHOM_HANG: "NH",
+	NHAN_VIEN: "NV",
+	PHIEU_XUAT: "PX",
+	CTPX: "CTPX",
+	DOI: "DOI",
+	HINH_THUC_DONG_GOI: "HTDG",
+	LOAI_NV: "LNV",
 } as Record<string, string>;
 
 // ─── Render helpers ────────────────────────────────────────────────────────
 function boxTop(cols: number[]): string {
-	return "\u250c" + cols.map((w) => "\u2500".repeat(w + 2)).join("\u252c") + "\u2510";
+	return (
+		"\u250c" + cols.map((w) => "\u2500".repeat(w + 2)).join("\u252c") + "\u2510"
+	);
 }
 function boxSep(cols: number[]): string {
-	return "\u251c" + cols.map((w) => "\u2500".repeat(w + 2)).join("\u253c") + "\u2524";
+	return (
+		"\u251c" + cols.map((w) => "\u2500".repeat(w + 2)).join("\u253c") + "\u2524"
+	);
 }
 function boxBot(cols: number[]): string {
-	return "\u2514" + cols.map((w) => "\u2500".repeat(w + 2)).join("\u2534") + "\u2518";
+	return (
+		"\u2514" + cols.map((w) => "\u2500".repeat(w + 2)).join("\u2534") + "\u2518"
+	);
 }
 function boxRow(cols: { w: number; text: string }[]): string {
-	return "\u2502 " + cols.map((c) => c.text.padEnd(c.w)).join(" \u2502 ") + " \u2502";
+	return (
+		"\u2502 " + cols.map((c) => c.text.padEnd(c.w)).join(" \u2502 ") + " \u2502"
+	);
 }
 
 // ─── Main ──────────────────────────────────────────────────────────────────
@@ -191,19 +232,34 @@ function main(): void {
 
 	console.log("\n  Technique coverage:");
 	const TECH_INTEREST = [
-		"UNION/ALL", "INTERSECT", "EXCEPT",
-		"CASE", "LIKE", "SUBSTR",
-		"LEFT JOIN", "SELF-JOIN", "GROUP BY", "GROUP BY + HAVING",
-		"LIMIT", "DISTINCT", "IS NULL",
-		"EXISTS", "NOT EXISTS",
-		"IN (subquery)", "NOT IN (subquery)",
-		"Derived table (FROM)", "Scalar subquery",
-		"COALESCE", "Window function",
+		"UNION/ALL",
+		"INTERSECT",
+		"EXCEPT",
+		"CASE",
+		"LIKE",
+		"SUBSTR",
+		"LEFT JOIN",
+		"SELF-JOIN",
+		"GROUP BY",
+		"GROUP BY + HAVING",
+		"LIMIT",
+		"DISTINCT",
+		"IS NULL",
+		"EXISTS",
+		"NOT EXISTS",
+		"IN (subquery)",
+		"NOT IN (subquery)",
+		"Derived table (FROM)",
+		"Scalar subquery",
+		"COALESCE",
+		"Window function",
 	];
 	for (const tech of TECH_INTEREST) {
 		const info = techMap[tech];
 		if (info) {
-			console.log(`    \u2713 ${tech.padEnd(22)} ${info.count} ex  ${info.exerciseIds.join(", ")}`);
+			console.log(
+				`    \u2713 ${tech.padEnd(22)} ${info.count} ex  ${info.exerciseIds.join(", ")}`,
+			);
 		} else {
 			console.log(`    \u2717 ${tech.padEnd(22)} 0 ex  \u2190 GAP`);
 		}
@@ -211,16 +267,21 @@ function main(): void {
 
 	// ── Table summary ──────────────────────────────────────────────────────
 	console.log("\n  Table coverage:");
-	const tableCounts = exercises.reduce((acc, ex) => {
-		for (const t of ex.tables) {
-			if (ALL_TABLES.includes(t)) acc[t] = (acc[t] || 0) + 1;
-		}
-		return acc;
-	}, {} as Record<string, number>);
+	const tableCounts = exercises.reduce(
+		(acc, ex) => {
+			for (const t of ex.tables) {
+				if (ALL_TABLES.includes(t)) acc[t] = (acc[t] || 0) + 1;
+			}
+			return acc;
+		},
+		{} as Record<string, number>,
+	);
 	for (const t of ALL_TABLES) {
 		const n = tableCounts[t] || 0;
 		const bar = "\u2588".repeat(Math.round((n / exercises.length) * barW));
-		console.log(`    ${SHORT[t].padEnd(5)} ${t.padEnd(18)} ${n.toString().padStart(2)}  ${bar}`);
+		console.log(
+			`    ${SHORT[t].padEnd(5)} ${t.padEnd(18)} ${n.toString().padStart(2)}  ${bar}`,
+		);
 	}
 }
 

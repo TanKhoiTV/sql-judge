@@ -17,9 +17,11 @@ const PUBLIC = new URL("../public", import.meta.url).pathname;
 // Parse optional CLI flags
 const args = process.argv.slice(2);
 const dbPath =
-	args[args.indexOf("--db") + 1] || resolve(PUBLIC, "db", "Unilever_Product_Management.db");
+	args[args.indexOf("--db") + 1] ||
+	resolve(PUBLIC, "db", "Unilever_Product_Management.db");
 const jsonPath =
-	args[args.indexOf("--json") + 1] || resolve(PUBLIC, "exercises", "exercises.json");
+	args[args.indexOf("--json") + 1] ||
+	resolve(PUBLIC, "exercises", "exercises.json");
 
 interface Exercise {
 	id: string;
@@ -53,15 +55,21 @@ function main(): void {
 			let sample = "";
 			if (rows.length > 0) {
 				const first = rows[0] as Record<string, unknown>;
-				const vals = Object.values(first).slice(0, 3).map((v) => String(v ?? "NULL"));
+				const vals = Object.values(first)
+					.slice(0, 3)
+					.map((v) => String(v ?? "NULL"));
 				sample = `  e.g. ${vals.join(", ")}`;
 			}
 
 			if (rowCount === 0 && ex.difficulty !== "Easy") {
-				console.log(`${label} PASS (${cols.length} cols, 0 rows)\u001b[33m \u26a0 zero rows\u001b[0m`);
+				console.log(
+					`${label} PASS (${cols.length} cols, 0 rows)\u001b[33m \u26a0 zero rows\u001b[0m`,
+				);
 				warned++;
 			} else {
-				console.log(`${label} PASS (${cols.length} cols \u00d7 ${rowCount} rows)${sample ? `  ${sample}` : ""}`);
+				console.log(
+					`${label} PASS (${cols.length} cols \u00d7 ${rowCount} rows)${sample ? `  ${sample}` : ""}`,
+				);
 			}
 			passed++;
 		} catch (err: unknown) {
