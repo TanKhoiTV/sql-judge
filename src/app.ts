@@ -86,8 +86,7 @@ function updateExerciseListProgress(): void {
 		if (rec && rec.passCount > 0) {
 			el.classList.add("completed");
 			if (badge)
-				badge.textContent =
-					"✅ " + rec.passCount + "/" + rec.attemptCount;
+				badge.textContent = "✅ " + rec.passCount + "/" + rec.attemptCount;
 		} else if (rec) {
 			el.classList.remove("completed");
 			if (badge) badge.textContent = "🔄 " + rec.attemptCount;
@@ -311,21 +310,19 @@ function loadExercises() {
 	}));
 	const progress = loadProgress();
 	document.getElementById("exerciseList").innerHTML = exercises
-		.map(
-			(e: any) => {
-				const rec = progress[e.id];
-				const badgeHtml = rec
-					? rec.passCount > 0
-						? `<span class="progress-badge completed-badge">✅ ${rec.passCount}/${rec.attemptCount}</span>`
-						: `<span class="progress-badge attempted-badge">🔄 ${rec.attemptCount}</span>`
-					: "";
-				return `<div class="exercise-item${rec && rec.passCount > 0 ? " completed" : ""}" data-id="${escHtml(e.id)}" onclick="selectExercise('${escHtml(e.id)}')">
+		.map((e: any) => {
+			const rec = progress[e.id];
+			const badgeHtml = rec
+				? rec.passCount > 0
+					? `<span class="progress-badge completed-badge">✅ ${rec.passCount}/${rec.attemptCount}</span>`
+					: `<span class="progress-badge attempted-badge">🔄 ${rec.attemptCount}</span>`
+				: "";
+			return `<div class="exercise-item${rec && rec.passCount > 0 ? " completed" : ""}" data-id="${escHtml(e.id)}" onclick="selectExercise('${escHtml(e.id)}')">
       <div class="title">${escHtml(e.title)}</div>
       <div class="meta"><span class="diff-badge diff-${escHtml(e.difficulty)}">${escHtml(e.difficulty)}</span>${escHtml(e.id)}</div>
       ${badgeHtml}
     </div>`;
-			},
-		)
+		})
 		.join("");
 }
 
@@ -384,8 +381,15 @@ function createEditor(containerId: string, initialValue: string): any {
 		},
 	});
 
+	let resizeTimer: any = null;
 	editor.on("change", () => {
-		editor.setSize(null, Math.max(120, editor.getScrollInfo().height + 10));
+		clearTimeout(resizeTimer);
+		resizeTimer = setTimeout(() => {
+			editor.setSize(
+				null,
+				Math.max(120, editor.getScrollInfo().height + 10),
+			);
+		}, 150);
 	});
 
 	editor.on("inputRead", (cm, change) => {
