@@ -103,6 +103,14 @@ body {
 	border-left-color: #58a6ff;
 	background: #1c2128;
 }
+.exercise-item.active.completed {
+	border-left-color: #3fb950;
+	border-left-width: 3px;
+	background: #0d2817;
+}
+.exercise-item.active.completed .title {
+	color: #7ee787;
+}
 .exercise-item .title {
 	font-size: 13px;
 	font-weight: 500;

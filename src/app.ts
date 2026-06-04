@@ -39,7 +39,11 @@ interface ProgressRecord {
 
 function loadProgress(): Record<string, ProgressRecord> {
 	try {
-		return JSON.parse(localStorage.getItem("sqljudge_progress") || "{}");
+		const raw = localStorage.getItem("sqljudge_progress");
+		if (!raw) return {};
+		const parsed = JSON.parse(raw);
+		if (typeof parsed !== "object" || parsed === null) return {};
+		return parsed;
 	} catch {
 		return {};
 	}
@@ -48,8 +52,10 @@ function loadProgress(): Record<string, ProgressRecord> {
 function saveProgress(progress: Record<string, ProgressRecord>): void {
 	try {
 		localStorage.setItem("sqljudge_progress", JSON.stringify(progress));
-	} catch {
-		/* localStorage full or unavailable */
+	} catch (e) {
+		if (e instanceof DOMException && e.name === "QuotaExceededError") {
+			console.warn("Could not save progress: localStorage quota exceeded");
+		}
 	}
 }
 
@@ -82,9 +88,12 @@ function updateExerciseListProgress(): void {
 			if (badge)
 				badge.textContent =
 					"✅ " + rec.passCount + "/" + rec.attemptCount;
-		} else {
+		} else if (rec) {
 			el.classList.remove("completed");
 			if (badge) badge.textContent = "🔄 " + rec.attemptCount;
+		} else {
+			el.classList.remove("completed");
+			if (badge && badge.parentNode) badge.parentNode.removeChild(badge);
 		}
 	});
 }
@@ -310,9 +319,9 @@ function loadExercises() {
 						? `<span class="progress-badge completed-badge">✅ ${rec.passCount}/${rec.attemptCount}</span>`
 						: `<span class="progress-badge attempted-badge">🔄 ${rec.attemptCount}</span>`
 					: "";
-				return `<div class="exercise-item${rec && rec.passCount > 0 ? " completed" : ""}" data-id="${e.id}" onclick="selectExercise('${e.id}')">
-      <div class="title">${e.title}</div>
-      <div class="meta"><span class="diff-badge diff-${e.difficulty}">${e.difficulty}</span>${e.id}</div>
+				return `<div class="exercise-item${rec && rec.passCount > 0 ? " completed" : ""}" data-id="${escHtml(e.id)}" onclick="selectExercise('${escHtml(e.id)}')">
+      <div class="title">${escHtml(e.title)}</div>
+      <div class="meta"><span class="diff-badge diff-${escHtml(e.difficulty)}">${escHtml(e.difficulty)}</span>${escHtml(e.id)}</div>
       ${badgeHtml}
     </div>`;
 			},
