@@ -609,5 +609,128 @@
     "question": "Create a product status report. Show MAHH, TENHH, and a column TrangThai with values: Da ban va xuat kho (sold AND delivered), Chi ban (only sold), Chi xuat (only delivered), Khong hoat dong (no activity). Use CASE with EXISTS.",
     "solution": "SELECT h.MAHH, h.TENHH,\n  CASE\n    WHEN EXISTS (SELECT 1 FROM CTHD WHERE MAHH = h.MAHH)\n     AND EXISTS (SELECT 1 FROM CTPX WHERE MAHH = h.MAHH)\n      THEN 'Da ban va xuat kho'\n    WHEN EXISTS (SELECT 1 FROM CTHD WHERE MAHH = h.MAHH)\n      THEN 'Chi ban'\n    WHEN EXISTS (SELECT 1 FROM CTPX WHERE MAHH = h.MAHH)\n      THEN 'Chi xuat'\n    ELSE 'Khong hoat dong'\n  END AS TrangThai\nFROM HANG_HOA h\nORDER BY h.MAHH;",
     "hint": "Use CASE with multiple EXISTS subqueries to classify each product"
+  },
+  {
+    "id": "51-products-sold-not-delivered",
+    "title": "Products sold but not delivered",
+    "difficulty": "Medium",
+    "tables": [
+      "CTHD",
+      "CTPX"
+    ],
+    "question": "Find products that have been sold via invoice but NEVER delivered from warehouse (i.e., exist in CTHD but not in CTPX). Show MAHH. Use EXCEPT.",
+    "solution": "SELECT MAHH FROM CTHD\nEXCEPT\nSELECT MAHH FROM CTPX\nORDER BY MAHH;",
+    "hint": "Use EXCEPT to subtract delivered products from sold products"
+  },
+  {
+    "id": "52-union-product-movements",
+    "title": "All product movements (delivery and sales)",
+    "difficulty": "Medium",
+    "tables": [
+      "CTPX",
+      "CTHD"
+    ],
+    "question": "The warehouse needs a consolidated log of all product movements. List every product movement from both delivery notes (CTPX) and invoices (CTHD). Show MAHH, SOLUONG, and a column LOAIGIAODICH with values 'XUAT_KHO' for deliveries and 'BAN_LE' for sales. Use UNION ALL. Order by MAHH then LOAIGIAODICH.",
+    "solution": "SELECT MAHH, SOLUONG AS SOLUONG, 'XUAT_KHO' AS LOAIGIAODICH\nFROM CTPX\nUNION ALL\nSELECT MAHH, SLBAN, 'BAN_LE'\nFROM CTHD\nORDER BY MAHH, LOAIGIAODICH;",
+    "hint": "Use UNION ALL with a literal label column to identify the source"
+  },
+  {
+    "id": "53-union-aggregate-combined",
+    "title": "Combined movement totals per product",
+    "difficulty": "Medium",
+    "tables": [
+      "CTPX",
+      "CTHD"
+    ],
+    "question": "Calculate the total quantity moved (delivered + sold) for each product. Use UNION ALL to combine CTPX.SOLUONG and CTHD.SLBAN, then GROUP BY and SUM. Show MAHH and TONG_SOLUONG. Order by TONG_SOLUONG descending.",
+    "solution": "SELECT MAHH, SUM(SOLUONG) AS TONG_SOLUONG\nFROM (\n    SELECT MAHH, SOLUONG FROM CTPX\n    UNION ALL\n    SELECT MAHH, SLBAN FROM CTHD\n)\nGROUP BY MAHH\nORDER BY TONG_SOLUONG DESC;",
+    "hint": "Wrap UNION ALL in a subquery, then GROUP BY and aggregate"
+  },
+  {
+    "id": "54-above-group-avg-price",
+    "title": "Products above their group's average price",
+    "difficulty": "Medium",
+    "tables": [
+      "HANG_HOA"
+    ],
+    "question": "Find products whose price (DONGIA) exceeds the average price of all products in the SAME product group. Show MAHH, TENHH, DONGIA, and MANHOM. Use a correlated subquery in WHERE. Order by group then price descending.",
+    "solution": "SELECT h.MAHH, h.TENHH, h.DONGIA, h.MANHOM\nFROM HANG_HOA h\nWHERE h.DONGIA > (\n    SELECT AVG(h2.DONGIA)\n    FROM HANG_HOA h2\n    WHERE h2.MANHOM = h.MANHOM\n)\nORDER BY h.MANHOM, h.DONGIA DESC;",
+    "hint": "The inner WHERE clause references the outer table's MANHOM — that makes it a correlated subquery"
+  },
+  {
+    "id": "55-above-group-avg-stock",
+    "title": "Products with above-average stock in their group",
+    "difficulty": "Medium",
+    "tables": [
+      "HANG_HOA"
+    ],
+    "question": "Find products whose stock quantity (SLTON) is higher than the average stock of all products in the same group. Show MAHH, TENHH, SLTON, and MANHOM. Use a correlated subquery. Order by group then stock descending.",
+    "solution": "SELECT h.MAHH, h.TENHH, h.SLTON, h.MANHOM\nFROM HANG_HOA h\nWHERE h.SLTON > (\n    SELECT AVG(h2.SLTON)\n    FROM HANG_HOA h2\n    WHERE h2.MANHOM = h.MANHOM\n)\nORDER BY h.MANHOM, h.SLTON DESC;",
+    "hint": "Same correlated subquery pattern as the average-price exercise, but compare SLTON instead of DONGIA"
+  },
+  {
+    "id": "56-invoices-above-avg-items",
+    "title": "Invoices with more items than average",
+    "difficulty": "Medium",
+    "tables": [
+      "HOA_DON",
+      "CTHD"
+    ],
+    "question": "Find invoices that contain more distinct products than the average number of products per invoice. Show MAHD, NGAYLAP, TONGTIEN, and the number of products (as SO_MATHANG). Use a subquery in HAVING to get the average. Order by SO_MATHANG descending.",
+    "solution": "SELECT hd.MAHD, hd.NGAYLAP, hd.TONGTIEN, COUNT(ct.MAHH) AS SO_MATHANG\nFROM HOA_DON hd\nJOIN CTHD ct ON hd.MAHD = ct.MAHD\nGROUP BY hd.MAHD\nHAVING COUNT(ct.MAHH) > (\n    SELECT AVG(item_count) FROM (\n        SELECT COUNT(ct2.MAHH) AS item_count\n        FROM HOA_DON hd2\n        JOIN CTHD ct2 ON hd2.MAHD = ct2.MAHD\n        GROUP BY hd2.MAHD\n    )\n)\nORDER BY SO_MATHANG DESC;",
+    "hint": "Use a subquery in HAVING with a nested subquery to compute the average item count"
+  },
+  {
+    "id": "57-least-expensive-per-group",
+    "title": "Least expensive product in each group",
+    "difficulty": "Hard",
+    "tables": [
+      "HANG_HOA",
+      "NHOM_HANG"
+    ],
+    "question": "Find the cheapest product in each product group. Show group name (TENNHOM), product code (MAHH), product name (TENHH), and its price (DONGIA). Use a correlated subquery with MIN to find the minimum price per group. Order by group name.",
+    "solution": "SELECT nh.TENNHOM, h.MAHH, h.TENHH, h.DONGIA\nFROM HANG_HOA h\nJOIN NHOM_HANG nh ON h.MANHOM = nh.MANHOM\nWHERE h.DONGIA = (\n    SELECT MIN(h2.DONGIA)\n    FROM HANG_HOA h2\n    WHERE h2.MANHOM = h.MANHOM\n)\nORDER BY nh.TENNHOM;",
+    "hint": "Use a correlated subquery with MIN() to find the lowest price within each group, then match products with that exact price"
+  },
+  {
+    "id": "58-division-products-all-group-teams",
+    "title": "Products delivered by every team in their group",
+    "difficulty": "Hard",
+    "tables": [
+      "HANG_HOA",
+      "DOI",
+      "CTPX",
+      "PHIEU_XUAT",
+      "NHAN_VIEN"
+    ],
+    "question": "Find products that have been delivered by EVERY team responsible for their product group. Use double NOT EXISTS — there should NOT exist a team covering the product's group that has NOT delivered that product. Show MAHH, TENHH, and MANHOM. Order by MAHH.",
+    "solution": "SELECT h.MAHH, h.TENHH, h.MANHOM\nFROM HANG_HOA h\nWHERE NOT EXISTS (\n    SELECT d.MADOI\n    FROM DOI d\n    WHERE d.MANHOM = h.MANHOM\n    AND NOT EXISTS (\n        SELECT 1\n        FROM PHIEU_XUAT px\n        JOIN CTPX ct ON px.MAPX = ct.MAPX\n        JOIN NHAN_VIEN nv ON px.MANV = nv.MANV\n        WHERE nv.MADOI = d.MADOI AND ct.MAHH = h.MAHH\n    )\n)\nORDER BY h.MAHH;",
+    "hint": "Double NOT EXISTS is the relational division pattern: for each team, check there is no missing delivery"
+  },
+  {
+    "id": "59-employees-sales-no-delivery",
+    "title": "Employees who sell but never receive delivery",
+    "difficulty": "Hard",
+    "tables": [
+      "NHAN_VIEN",
+      "HOA_DON",
+      "PHIEU_XUAT"
+    ],
+    "question": "Find employees who have issued invoices but NEVER received any warehouse delivery note. Show MANV and HOTEN. Use EXCEPT inside IN to subtract employees with delivery notes from employees with invoices. Order by MANV.",
+    "solution": "SELECT nv.MANV, nv.HOTEN\nFROM NHAN_VIEN nv\nWHERE nv.MANV IN (\n    SELECT MANV FROM HOA_DON\n    EXCEPT\n    SELECT MANV FROM PHIEU_XUAT\n)\nORDER BY nv.MANV;",
+    "hint": "Combine EXCEPT with IN: first find employees in invoices, then subtract those in delivery notes"
+  },
+  {
+    "id": "60-union-employee-role-labels",
+    "title": "Employees grouped by activity type",
+    "difficulty": "Medium",
+    "tables": [
+      "NHAN_VIEN",
+      "HOA_DON",
+      "PHIEU_XUAT"
+    ],
+    "question": "List all employees involved in at least one business activity, with a label showing whether they handle sales or delivery. Use UNION to combine two sets: employees with invoices (label 'CO_HOA_DON') and employees with delivery notes (label 'CO_PHIEU_XUAT'). Show MANV, HOTEN, and VAITRO. Order by MANV then VAITRO.",
+    "solution": "SELECT nv.MANV, nv.HOTEN, 'CO_HOA_DON' AS VAITRO\nFROM NHAN_VIEN nv\nWHERE nv.MANV IN (SELECT MANV FROM HOA_DON)\nUNION\nSELECT nv.MANV, nv.HOTEN, 'CO_PHIEU_XUAT'\nFROM NHAN_VIEN nv\nWHERE nv.MANV IN (SELECT MANV FROM PHIEU_XUAT)\nORDER BY MANV, VAITRO;",
+    "hint": "Each SELECT creates one set; UNION combines them; the literal label column identifies the source"
   }
 ]
