@@ -25,6 +25,18 @@ let currentMode: "practice" | "sandbox" = "practice";
 let schemaData: Record<string, any> | null = null;
 let cmEditor: any = null;
 let cmSandbox: any = null;
+// Expose module-level vars to window for onclick handlers in generated HTML.
+// With --bundle, esbuild wraps code in an IIFE, so bare identifiers like
+// cmEditor or selectExercise are not resolvable from event handler attributes.
+// Getters keep the window reference live even after reassignment.
+Object.defineProperty(window, "cmEditor", {
+	get: () => cmEditor,
+	configurable: true,
+});
+Object.defineProperty(window, "cmSandbox", {
+	get: () => cmSandbox,
+	configurable: true,
+});
 let activeDbName = "Unilever Product Management";
 let activeDbId = "unilever";
 let allExerciseDefs: any[] = [];
@@ -1083,6 +1095,26 @@ function resultTable(
 	html += "</tbody></table></div></div>";
 	return html;
 }
+
+// ─── Expose functions to window for inline onclick handlers ────────────────
+// With --bundle, function declarations are scoped inside the IIFE and not
+// visible to onclick attributes in index.html or generated HTML strings.
+const _w = window as any;
+_w.selectExercise = selectExercise;
+_w.switchMode = switchMode;
+_w.showSidebar = showSidebar;
+_w.showSchemaView = showSchemaView;
+_w.showBottomView = showBottomView;
+_w.showLoadSqlModal = showLoadSqlModal;
+_w.closeLoadSqlModal = closeLoadSqlModal;
+_w.loadSqlFromText = loadSqlFromText;
+_w.resetDatabase = resetDatabase;
+_w.resetProgress = resetProgress;
+_w.loadSchema = loadSchema;
+_w.runJudge = runJudge;
+_w.runSandbox = runSandbox;
+_w.setEditorValue = setEditorValue;
+_w.toggleBottomPanel = toggleBottomPanel;
 
 // ─── Init ──────────────────────────────────────────────────────────────────
 
