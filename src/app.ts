@@ -1149,7 +1149,17 @@ async function init() {
 	// Set initial bottom panel height to ~22% of viewport (VS Code terminal default)
 	const bottomPanel = document.getElementById("bottomPanel");
 	if (bottomPanel) {
-		bottomPanel.style.height = Math.round(window.innerHeight * 0.22) + "px";
+		const targetHeight = Math.round(window.innerHeight * 0.22);
+		bottomPanel.style.height = targetHeight + "px";
+		// Safety guard: if panel collapsed or height is too small, restore it
+		setTimeout(() => {
+			if (
+				!bottomPanel.classList.contains("collapsed") &&
+				bottomPanel.offsetHeight < targetHeight * 0.3
+			) {
+				bottomPanel.style.height = targetHeight + "px";
+			}
+		}, 300);
 	}
 }
 
