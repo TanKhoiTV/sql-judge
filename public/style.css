@@ -297,20 +297,6 @@ body {
 	display: block;
 }
 
-.bottom-grip {
-	cursor: ns-resize;
-	padding: 4px 10px;
-	color: #6e7681;
-	font-size: 11px;
-	letter-spacing: 3px;
-	user-select: none;
-	border-left: 1px solid #30363d;
-	transition: color 0.1s;
-}
-.bottom-grip:hover {
-	color: #e6edf3;
-	background: #21262d;
-}
 .bottom-toggle {
 	padding: 4px 12px;
 	cursor: pointer;
@@ -325,9 +311,6 @@ body {
 .bottom-toggle:hover {
 	color: #f0f6fc;
 	background: #21262d;
-}
-.bottom-panel.collapsed .bottom-grip {
-	cursor: default;
 }
 .bottom-panel.collapsed .bottom-toggle {
 	transform: rotate(180deg);

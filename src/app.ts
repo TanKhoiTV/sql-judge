@@ -423,7 +423,7 @@ function renderDescription(): void {
 	if (!container || !_descriptions) return;
 	let html = '<div style="padding:12px">';
 	for (const [name, info] of Object.entries(_descriptions)) {
-		html += `<details style="margin-bottom:8px;background:#161b22;border:1px solid #30363d;border-radius:6px;padding:8px 12px"${name === "NHOM_HANG" ? " open" : ""}>
+		html += `<details style="margin-bottom:8px;background:#161b22;border:1px solid #30363d;border-radius:6px;padding:8px 12px">
       <summary style="cursor:pointer;font-weight:600;color:#e6edf3;font-size:13px">${escHtml(name)}</summary>
       <p style="margin:8px 0 4px;font-size:12px;color:#8b949e;line-height:1.5">${escHtml(info.description)}</p>
       <table style="width:100%;border-collapse:collapse;margin-top:6px;font-size:11px">
