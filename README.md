@@ -187,4 +187,4 @@ Canonical version is in `package.json`. Run `npm run build:version` to sync to `
 
 ## License
 
-ISC
+MIT
