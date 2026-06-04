@@ -4,7 +4,7 @@ A fully client-side SQL practice judge built around a Unilever Vietnam product m
 
 ## Features
 
-- **13 exercises** — Easy → Hard, covering SELECT, WHERE, JOIN, GROUP BY, HAVING, subqueries, date ranges
+- **30 exercises** — 10 Easy, 11 Medium, 9 Hard, covering SELECT, WHERE, JOIN, GROUP BY, HAVING, subqueries, date ranges, DISTINCT, LIKE, IS NULL, IN, MIN/MAX/AVG, LEFT JOIN, EXISTS/NOT EXISTS, correlated subqueries, self JOIN, relational division, derived tables, CASE expressions, and more
 - **Auto-grading** — your query is compared against a reference solution (columns, rows, data, ordering)
 - **CLI judge** — practice from the terminal with `npx tsx judge.ts`
 - **Schema viewer** — collapsible table cards with columns, types, PKs, FKs, and NOT NULL constraints
@@ -47,7 +47,7 @@ npm run build       # Full build: preset DB artifacts + app (typecheck, JS, CSS,
 npm run build:app   # Fast dev build: typecheck → version sync → JS → CSS → gzip
 npm run build:preset # Preset DB only: SQL script → .db → ER SVG → descriptions
 npm run build:js    # Compile src/app.ts → public/app.js (esbuild, ~16ms)
-npm test            # Run 25+ vitest unit tests
+npm test            # Run 25 vitest unit tests
 npm run typecheck   # tsc --noEmit (zero errors required)
 ```
 
@@ -59,21 +59,39 @@ The build pipeline is split into two groups:
 
 ## Exercises
 
-| # | Title | Difficulty |
-|---|-------|------------|
-| 01 | All products with their prices | Easy |
-| 02 | Products in a specific group | Easy |
-| 03 | Products with group names | Easy |
-| 04 | Products per group | Easy |
-| 05 | Revenue by product group | Medium |
-| 06 | Top 3 best-selling products | Medium |
-| 07 | Employees grouped by role | Medium |
-| 08 | Invoice details with product and agent names | Medium |
-| 09 | Products above average price | Hard |
-| 10 | Highest-spending agent | Hard |
-| 11 | Invoices in a date range | Easy |
-| 12 | Team revenue ranking | Hard |
-| 13 | Invoices with high discounts | Medium |
+| # | Title | Difficulty | Topic |
+|---|-------|------------|-------|
+| 01 | All products with their prices | Easy | SELECT, ORDER BY |
+| 02 | Products in a specific group | Easy | WHERE |
+| 03 | Products with group names | Easy | INNER JOIN |
+| 04 | Products per group | Easy | GROUP BY, COUNT |
+| 11 | Invoices in a date range | Easy | Date range, JOIN |
+| 14 | Distinct product groups | Easy | DISTINCT |
+| 15 | Search agents by name | Easy | LIKE |
+| 16 | Packaging without secondary unit | Easy | IS NULL |
+| 17 | Products in selected groups | Easy | IN clause |
+| 18 | Price statistics | Easy | MIN, MAX, AVG |
+| 05 | Revenue by product group | Medium | 3-table JOIN, SUM, GROUP BY |
+| 06 | Top 3 best-selling products | Medium | SUM, GROUP BY, LIMIT |
+| 07 | Employees grouped by role | Medium | GROUP BY, HAVING |
+| 08 | Invoice details with product and agent names | Medium | 4-table JOIN |
+| 13 | Invoices with high discounts | Medium | WHERE, multi-JOIN |
+| 19 | Products that have been sold | Medium | Subquery with IN |
+| 20 | Employee invoice activity | Medium | LEFT JOIN, aggregation |
+| 21 | Products never sold | Medium | Subquery with NOT IN |
+| 22 | Agents who have created invoices | Medium | EXISTS |
+| 23 | Agents with no invoice activity | Medium | NOT EXISTS |
+| 24 | Monthly revenue in 2008 | Medium | Date aggregation |
+| 25 | Above average for their group | Medium | Correlated subquery |
+| 09 | Products above average price | Hard | Scalar subquery |
+| 10 | Highest-spending agent | Hard | Multi-JOIN, LIMIT |
+| 12 | Team revenue ranking | Hard | Multi-JOIN, aggregation |
+| 26 | Agents buying from all groups | Hard | Relational division |
+| 27 | Product pairs in the same group | Hard | Self JOIN |
+| 28 | Average revenue per employee | Hard | Derived table |
+| 29 | Products never sold at deep discount | Hard | Correlated NOT EXISTS |
+| 30 | Top agents by group coverage and spending | Hard | Compound HAVING |
+| 31 | Custom invoice sorting | Hard | CASE in ORDER BY |
 
 ## Project Structure
 
@@ -95,7 +113,7 @@ src/                        # TypeScript source
 └── lib.ts                  # Shared: compareResults, normalizeValue, types
 
 tests/
-└── unit/compareResults.test.ts  # 25+ vitest tests
+└── unit/compareResults.test.ts  # 25 vitest tests
 
 scripts/                    # Build scripts (TypeScript)
 ├── create_db.ts            # SQL script → .db

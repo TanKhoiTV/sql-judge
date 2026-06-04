@@ -2,6 +2,44 @@
 
 All notable changes to this project are documented here.
 
+## 0.9.1 (2026-06-04)
+
+### Features
+- Expanded exercise library from 13 to 31 exercises (10 Easy, 12 Medium, 9 Hard)
+- Added 17 new exercises covering 8 previously missing SQL topics
+
+#### New Easy exercises (5)
+- **DISTINCT** — Show distinct product groups (14-distinct-groups)
+- **LIKE** — Search agents by name pattern (15-like-search)
+- **IS NULL** — Find packaging without secondary unit (16-is-null-check)
+- **IN clause** — Filter products by multiple groups (17-in-clause)
+- **MIN/MAX/AVG** — Price statistics across all products (18-min-max-avg)
+
+#### New Medium exercises (6)
+- **Subquery with IN** — Find products that have been sold (19-sold-products)
+- **LEFT JOIN + aggregation** — Employee invoice activity (20-employees-invoices)
+- **Subquery with NOT IN** — Find unsold products (21-unsold-products)
+- **EXISTS** — Agents who have created invoices (22-agents-with-invoices)
+- **NOT EXISTS** — Agents with no invoices (23-agents-without-invoices)
+- **Date aggregation** — Monthly revenue report (24-monthly-revenue)
+- **Correlated subquery** — Above group average price (25-per-group-above-average)
+
+#### New Hard exercises (6)
+- **Relational division** — Agents buying from all groups (26-all-groups-division)
+- **Self JOIN** — Product pairs in the same group (27-product-pairs)
+- **Derived table** — Average revenue per employee (28-avg-employee-revenue)
+- **Correlated NOT EXISTS** — Products never deeply discounted (29-never-discounted)
+- **Compound HAVING** — Top agents by group coverage and spending (30-top-agents)
+- **CASE + ORDER BY** — Custom invoice sorting (31-custom-sort)
+
+### Data
+- Added one invoice row (010802HD001) for agent DL004 with a Bột (BOT) product to make the division exercise return a non-zero result
+
+### Project
+- Renamed package to `sql-judge` (was `database-schema-data-extraction-2026-06-03`)
+- Added MIT `LICENSE` file
+- Updated package description
+
 ## 0.9.0 (2026-06-04)
 
 ### Features

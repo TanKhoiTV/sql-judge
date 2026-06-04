@@ -56,7 +56,7 @@ public/                          # Served by http-server (the web app)
 │   ├── Unilever_Product_Management.er.svg  # Pre-rendered ER diagram (build-time)
 │   └── Unilever_Product_Management.descriptions.json  # Column descriptions
 ├── exercises/
-│   └── exercises.json           # 13 exercise definitions with solutions
+│   └── exercises.json           # 30 exercise definitions with solutions (10 Easy, 11 Medium, 9 Hard)
 └── VERSION                      # Version string displayed in UI (generated)
 
 src/                             # TypeScript source
@@ -65,7 +65,7 @@ src/                             # TypeScript source
 
 tests/                           # Vitest test suite
 └── unit/
-    └── compareResults.test.ts   # 25+ tests for judge algorithm
+    └── compareResults.test.ts   # 25 tests for judge algorithm
 
 scripts/                         # Development helper scripts
 ├── create_db.ts                 # Rebuilds .db from the .sqlite.sql file
@@ -236,7 +236,7 @@ The build is split into two groups:
 ## Testing
 
 ```bash
-npm test            # vitest run — 25+ tests for judge algorithm
+npm test            # vitest run — 25 tests for judge algorithm
 npm run test:cli    # npx tsx judge.ts — CLI judge smoke test
 ```
 

@@ -1,7 +1,8 @@
 {
-  "name": "database-schema-data-extraction-2026-06-03",
-  "version": "0.9.0",
-  "description": "",
+  "name": "sql-judge",
+  "version": "0.9.1",
+  "description": "Client-side SQL practice judge — practice SQL in your browser or CLI with instant feedback against reference solutions",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "build:preset": "npm run build:db && npm run build:er && npm run build:schema",
@@ -22,7 +23,6 @@
   },
   "keywords": [],
   "author": "Tran Van Tan Khoi",
-  "license": "ISC",
   "dependencies": {
     "http-server": "^14.1.1"
   },
