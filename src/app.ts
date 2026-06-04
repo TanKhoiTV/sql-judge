@@ -21,6 +21,8 @@ let db: any = null;
 let SQL: any = null;
 let exercises: { id: string; title: string; difficulty: string }[] = [];
 let currentId: string | null = null;
+let currentFilter = "all";
+let currentSort = "default";
 let currentMode: "practice" | "sandbox" = "practice";
 let schemaData: Record<string, any> | null = null;
 let cmEditor: any = null;
@@ -85,22 +87,13 @@ function recordAttempt(exId: string, passed: boolean): void {
 	}
 	progress[exId] = rec;
 	saveProgress(progress);
-	updateExerciseListProgress();
+	renderExercises();
 }
 
-function updateExerciseListProgress(): void {
-	const progress = loadProgress();
-	document.querySelectorAll(".exercise-item").forEach((el) => {
-		const id = (el as HTMLElement).dataset.id;
-		if (!id) return;
-		const rec = progress[id];
-		el.classList.remove("completed", "failed");
-		if (rec && rec.passCount > 0) {
-			el.classList.add("completed");
-		} else if (rec && rec.attemptCount > 0) {
-			el.classList.add("failed");
-		}
-	});
+function getProgressWeight(rec: any): number {
+	if (rec && rec.passCount > 0) return 2;
+	if (rec && rec.attemptCount > 0) return 1;
+	return 0;
 }
 
 function resetProgress(): void {
@@ -227,42 +220,104 @@ function addSidebarResize(): void {
 
 // ─── Load exercises ────────────────────────────────────────────────────────
 function loadExercises() {
+	renderExercises();
+}
+
+function setFilter(filter: string): void {
+	currentFilter = filter;
+	renderExercises();
+}
+
+function setSort(sort: string): void {
+	currentSort = sort;
+	renderExercises();
+}
+
+function renderExercises() {
+	const list = document.getElementById("exerciseList");
+	if (!list) return;
+	// Save scroll position
+	const savedScroll = list.scrollTop;
+
+	// Custom database: no exercises, no controls
 	if (activeDbId !== "unilever") {
 		exercises = [];
-		document.getElementById("exerciseList").innerHTML =
+		list.innerHTML =
 			'<div style="padding:20px;text-align:center;color:#8b949e;font-size:13px">📭 No exercises for this database.<br>Switch to <a href="#" onclick="switchMode(\'sandbox\');return false" style="color:#58a6ff">Sandbox mode</a> to run your own queries.</div>';
 		return;
 	}
+
 	exercises = allExerciseDefs.map((e: any) => ({
 		id: e.id,
 		title: e.title,
 		difficulty: e.difficulty,
 	}));
+
 	const progress = loadProgress();
-	document.getElementById("exerciseList").innerHTML = exercises
-		.map((e: any) => {
+
+	// Filter
+	let filtered = exercises;
+	if (currentFilter !== "all") {
+		filtered = exercises.filter((e) => e.difficulty === currentFilter);
+	}
+
+	// Sort (stable — tied items keep original order)
+	const sorted = [...filtered].sort((a, b) => {
+		if (currentSort === "difficulty") {
+			const order: Record<string, number> = {
+				Easy: 1,
+				Medium: 2,
+				Hard: 3,
+			};
+			return (order[a.difficulty] || 0) - (order[b.difficulty] || 0);
+		}
+		if (currentSort === "progress") {
+			return (
+				getProgressWeight(progress[a.id]) - getProgressWeight(progress[b.id])
+			);
+		}
+		return 0; // "default" — keep original order
+	});
+
+	// Build HTML
+	let html = `<div class="exercise-filter-bar">
+    <div class="filter-btn${currentFilter === "all" ? " active" : ""}" onclick="setFilter('all')">All</div>
+    <div class="filter-btn${currentFilter === "Easy" ? " active" : ""}" onclick="setFilter('Easy')">Easy</div>
+    <div class="filter-btn${currentFilter === "Medium" ? " active" : ""}" onclick="setFilter('Medium')">Medium</div>
+    <div class="filter-btn${currentFilter === "Hard" ? " active" : ""}" onclick="setFilter('Hard')">Hard</div>
+  </div>
+  <div class="exercise-sort-bar">
+    <span class="sort-label">Sort:</span>
+    <div class="sort-btn${currentSort === "default" ? " active" : ""}" onclick="setSort('default')">Default</div>
+    <div class="sort-btn${currentSort === "difficulty" ? " active" : ""}" onclick="setSort('difficulty')">Difficulty</div>
+    <div class="sort-btn${currentSort === "progress" ? " active" : ""}" onclick="setSort('progress')">Progress</div>
+  </div>`;
+
+	if (sorted.length === 0) {
+		html +=
+			'<div style="padding:20px;text-align:center;color:#8b949e;font-size:13px">🔍 No exercises match the filter.</div>';
+	} else {
+		for (const e of sorted) {
 			const rec = progress[e.id];
 			let cls = "exercise-item";
 			if (rec && rec.passCount > 0) cls += " completed";
 			else if (rec && rec.attemptCount > 0) cls += " failed";
-			return `<div class="${cls}" data-id="${escHtml(e.id)}" onclick="selectExercise('${escHtml(e.id)}')">
+			if (e.id === currentId) cls += " active";
+			html += `<div class="${cls}" data-id="${escHtml(e.id)}" onclick="selectExercise('${escHtml(e.id)}')">
       <div class="title">${escHtml(e.title)}</div>
       <div class="meta"><span class="diff-badge diff-${escHtml(e.difficulty)}">${escHtml(e.difficulty)}</span>${escHtml(e.id)}</div>
     </div>`;
-		})
-		.join("");
+		}
+	}
+
+	list.innerHTML = html;
+	// Restore scroll position
+	list.scrollTop = savedScroll;
 }
 
 function selectExercise(id: string): void {
 	currentId = id;
-	document
-		.querySelectorAll(".exercise-item")
-		.forEach((el) =>
-			(el as HTMLElement).classList.toggle(
-				"active",
-				(el as HTMLElement).dataset.id === id,
-			),
-		);
+	renderExercises();
 	if (currentMode === "practice") loadPractice(id);
 	else loadSandbox();
 }
@@ -1000,6 +1055,8 @@ function loadSqlFromText() {
 			db = newDb;
 			activeDbName = name;
 			activeDbId = "custom";
+			currentFilter = "all";
+			currentSort = "default";
 
 			closeLoadSqlModal();
 			schemaData = null;
@@ -1037,6 +1094,8 @@ async function resetDatabase() {
 	db = new SQL.Database(new Uint8Array(buffer));
 	activeDbName = "Unilever Product Management";
 	activeDbId = "unilever";
+	currentFilter = "all";
+	currentSort = "default";
 
 	schemaData = null;
 	cmEditor = null;
@@ -1115,6 +1174,8 @@ _w.runJudge = runJudge;
 _w.runSandbox = runSandbox;
 _w.setEditorValue = setEditorValue;
 _w.toggleBottomPanel = toggleBottomPanel;
+_w.setFilter = setFilter;
+_w.setSort = setSort;
 
 // ─── Init ──────────────────────────────────────────────────────────────────
 

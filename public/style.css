@@ -67,6 +67,63 @@ body {
 }
 
 /* Exercises list */
+.exercise-filter-bar {
+	padding: 8px 12px 4px;
+	display: flex;
+	gap: 4px;
+	flex-wrap: wrap;
+	border-bottom: 1px solid #30363d;
+}
+.filter-btn {
+	padding: 3px 10px;
+	font-size: 11px;
+	border-radius: 12px;
+	cursor: pointer;
+	background: #21262d;
+	border: 1px solid #30363d;
+	color: #8b949e;
+	transition: all 0.1s;
+	user-select: none;
+}
+.filter-btn:hover {
+	background: #30363d;
+	color: #c9d1d9;
+}
+.filter-btn.active {
+	background: #1f6feb;
+	border-color: #1f6feb;
+	color: #fff;
+}
+
+.exercise-sort-bar {
+	padding: 4px 12px 8px;
+	display: flex;
+	gap: 4px;
+	align-items: center;
+	font-size: 11px;
+	border-bottom: 1px solid #30363d;
+}
+.sort-label {
+	color: #8b949e;
+	margin-right: 2px;
+}
+.sort-btn {
+	padding: 2px 8px;
+	border-radius: 8px;
+	cursor: pointer;
+	color: #8b949e;
+	transition: all 0.1s;
+	user-select: none;
+}
+.sort-btn:hover {
+	color: #c9d1d9;
+	background: #21262d;
+}
+.sort-btn.active {
+	color: #58a6ff;
+	background: #1c2128;
+}
+
 .exercise-item {
 	padding: 10px 16px;
 	cursor: pointer;

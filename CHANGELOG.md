@@ -2,6 +2,23 @@
 
 All notable changes to this project are documented here.
 
+## 0.9.0 (2026-06-04)
+
+### Features
+- Sort and filter exercises in the sidebar by difficulty and solving status
+- Filter pills: All / Easy / Medium / Hard
+- Sort pills: Default / Difficulty / Progress
+- Filter/sort bars rendered inline above the exercise list
+- Filter/sort reset to All/Default on database switch
+- Scroll position preserved across filter/sort re-renders
+
+### Refactoring
+- Replaced `updateExerciseListProgress()` with unified `renderExercises()`
+- `renderExercises()` owns the full pipeline: filter → sort → build HTML → DOM set
+- `selectExercise()` simplified to set `currentId` + call `renderExercises()`
+- Added `getProgressWeight()` helper for progress-based sorting
+- Added `setFilter()` and `setSort()` functions exposed on window
+
 ## 0.8.0 (2026-06-04)
 
 ### Build Pipeline
