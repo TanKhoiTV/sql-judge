@@ -635,21 +635,20 @@ function renderChecks(): void {
 	container.innerHTML = html;
 }
 
-// ─── Bottom panel vertical resize ──────────────────────────────────────────
+// ─── Bottom panel vertical resize (drag anywhere on the bottom bar) ───────
 function addBottomResize(): void {
-	const grip = document.getElementById("bottomGrip");
+	const bar = document.getElementById("bottomBar");
 	const panel = document.getElementById("bottomPanel");
-	if (!grip || !panel) return;
+	if (!bar || !panel) return;
 	let isDragging = false;
 	let startY = 0;
 	let startHeight = 0;
 
-	grip.addEventListener("mousedown", (e: MouseEvent) => {
+	bar.addEventListener("mousedown", (e: MouseEvent) => {
 		if (panel.classList.contains("collapsed")) return;
-		e.preventDefault();
-		isDragging = true;
 		startY = e.clientY;
 		startHeight = panel.offsetHeight;
+		isDragging = true;
 		document.body.style.cursor = "ns-resize";
 		document.body.style.userSelect = "none";
 

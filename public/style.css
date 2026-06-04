@@ -260,6 +260,7 @@ body {
 	border-bottom: 1px solid #30363d;
 	flex-shrink: 0;
 	min-height: 32px;
+	cursor: ns-resize;
 }
 .bottom-tab {
 	padding: 6px 10px;
