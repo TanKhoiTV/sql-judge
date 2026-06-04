@@ -3,7 +3,9 @@
     "id": "01-simple-select",
     "title": "All products with their prices",
     "difficulty": "Easy",
-    "tables": ["HANG_HOA"],
+    "tables": [
+      "HANG_HOA"
+    ],
     "question": "Show all products: their code (MAHH), name (TENHH), unit price (DONGIA), and stock quantity (SLTON). Order by price descending.",
     "solution": "SELECT MAHH, TENHH, DONGIA, SLTON\nFROM HANG_HOA\nORDER BY DONGIA DESC;",
     "hint": "Use SELECT ... FROM HANG_HOA with ORDER BY"
@@ -12,7 +14,10 @@
     "id": "02-where-clause",
     "title": "Products in a specific group",
     "difficulty": "Easy",
-    "tables": ["HANG_HOA", "NHOM_HANG"],
+    "tables": [
+      "HANG_HOA",
+      "NHOM_HANG"
+    ],
     "question": "Find all products in the 'Thực phẩm' (Food) group. Show MAHH, TENHH, DONGIA. The group code for food is 'TP'.",
     "solution": "SELECT MAHH, TENHH, DONGIA\nFROM HANG_HOA\nWHERE MANHOM = 'TP';",
     "hint": "Use WHERE MANHOM = 'TP'"
@@ -21,7 +26,10 @@
     "id": "03-simple-join",
     "title": "Products with group names",
     "difficulty": "Easy",
-    "tables": ["HANG_HOA", "NHOM_HANG"],
+    "tables": [
+      "HANG_HOA",
+      "NHOM_HANG"
+    ],
     "question": "Show all products with their group name. Display MAHH, TENHH (as 'SanPham'), TENNHOM (as 'NhomHang'), and DONGIA.",
     "solution": "SELECT h.MAHH, h.TENHH AS SanPham, n.TENNHOM AS NhomHang, h.DONGIA\nFROM HANG_HOA h\nJOIN NHOM_HANG n ON h.MANHOM = n.MANHOM\nORDER BY n.TENNHOM, h.MAHH;",
     "hint": "Use JOIN NHOM_HANG ON h.MANHOM = n.MANHOM"
@@ -30,70 +38,23 @@
     "id": "04-aggregation",
     "title": "Products per group",
     "difficulty": "Easy",
-    "tables": ["HANG_HOA", "NHOM_HANG"],
+    "tables": [
+      "HANG_HOA",
+      "NHOM_HANG"
+    ],
     "question": "Count how many products are in each product group. Show TENNHOM (group name) and the count (as 'SoLuong').",
     "solution": "SELECT n.TENNHOM, COUNT(*) AS SoLuong\nFROM HANG_HOA h\nJOIN NHOM_HANG n ON h.MANHOM = n.MANHOM\nGROUP BY n.TENNHOM;",
     "hint": "Use GROUP BY with COUNT(*)"
   },
   {
-    "id": "11-date-range",
-    "title": "Invoices in a date range",
-    "difficulty": "Easy",
-    "tables": ["HOA_DON", "DAI_LY"],
-    "question": "Show all invoices from February 2008. Display MAHD, NGAYLAP, TONGTIEN, and TENDL (agent name). Order by invoice code.",
-    "solution": "SELECT hd.MAHD, hd.NGAYLAP, hd.TONGTIEN, dl.TENDL\nFROM HOA_DON hd\nJOIN DAI_LY dl ON hd.MADL = dl.MADL\nWHERE hd.NGAYLAP >= '2008-02-01' AND hd.NGAYLAP < '2008-03-01'\nORDER BY hd.MAHD;",
-    "hint": "Use WHERE NGAYLAP >= '2008-02-01' AND NGAYLAP < '2008-03-01'"
-  },
-  {
-    "id": "14-distinct-groups",
-    "title": "Distinct product groups",
-    "difficulty": "Easy",
-    "tables": ["HANG_HOA"],
-    "question": "Your inventory manager wants to know how many different product groups the company sells products in. Show all distinct group codes (MANHOM) from the product catalog. This gives an overview of which product categories are active.",
-    "solution": "SELECT DISTINCT MANHOM\nFROM HANG_HOA\nORDER BY MANHOM;",
-    "hint": "Use the DISTINCT keyword to remove duplicate values"
-  },
-  {
-    "id": "15-like-search",
-    "title": "Search agents by name",
-    "difficulty": "Easy",
-    "tables": ["DAI_LY"],
-    "question": "The sales team needs a list of agents whose name contains the phrase 'bách hóa' (general store). Show the agent code (MADL), name (TENDL), and address (DIACHI).",
-    "solution": "SELECT MADL, TENDL, DIACHI\nFROM DAI_LY\nWHERE TENDL LIKE '%bách hóa%';",
-    "hint": "Use WHERE TENDL LIKE with % wildcards around the search term"
-  },
-  {
-    "id": "16-is-null-check",
-    "title": "Packaging without secondary unit",
-    "difficulty": "Easy",
-    "tables": ["HINH_THUC_DONG_GOI"],
-    "question": "Some packaging formats have a secondary packaging level (LOC) and some don't. Show all packaging formats that do NOT have a lốc (LOC) value — meaning they only sell by the thùng (case). Display MAHTDG and THUNG.",
-    "solution": "SELECT MAHTDG, THUNG\nFROM HINH_THUC_DONG_GOI\nWHERE LOC IS NULL;",
-    "hint": "Use WHERE LOC IS NULL to find rows with no LOC value"
-  },
-  {
-    "id": "17-in-clause",
-    "title": "Products in selected groups",
-    "difficulty": "Easy",
-    "tables": ["HANG_HOA"],
-    "question": "The marketing team is running a promotion and needs all products from the 'Bột' (BOT) and 'Thực phẩm' (TP) groups. Show MAHH, TENHH, and DONGIA. Use a single WHERE clause instead of multiple OR conditions.",
-    "solution": "SELECT MAHH, TENHH, DONGIA\nFROM HANG_HOA\nWHERE MANHOM IN ('BOT', 'TP');",
-    "hint": "Use IN ('BOT', 'TP') instead of multiple OR conditions"
-  },
-  {
-    "id": "18-min-max-avg",
-    "title": "Price statistics",
-    "difficulty": "Easy",
-    "tables": ["HANG_HOA"],
-    "question": "The finance team needs a quick overview of the product pricing. Show the cheapest price (as 'GiaThapNhat'), the most expensive price (as 'GiaCaoNhat'), and the average price (as 'GiaTrungBinh') across all products.",
-    "solution": "SELECT MIN(DONGIA) AS GiaThapNhat, MAX(DONGIA) AS GiaCaoNhat, AVG(DONGIA) AS GiaTrungBinh\nFROM HANG_HOA;",
-    "hint": "Use MIN(), MAX(), and AVG() aggregate functions"
-  },
-  {
     "id": "05-revenue-by-group",
     "title": "Revenue by product group",
     "difficulty": "Medium",
-    "tables": ["CTHD", "HANG_HOA", "NHOM_HANG"],
+    "tables": [
+      "CTHD",
+      "HANG_HOA",
+      "NHOM_HANG"
+    ],
     "question": "Calculate total revenue (sum of THANHTIEN) for each product group. Show TENNHOM and total revenue (as 'DoanhThu'). Order by revenue descending.",
     "solution": "SELECT n.TENNHOM, SUM(c.THANHTIEN) AS DoanhThu\nFROM CTHD c\nJOIN HANG_HOA h ON c.MAHH = h.MAHH\nJOIN NHOM_HANG n ON h.MANHOM = n.MANHOM\nGROUP BY n.TENNHOM\nORDER BY DoanhThu DESC;",
     "hint": "Join CTHD → HANG_HOA → NHOM_HANG, then GROUP BY"
@@ -102,7 +63,10 @@
     "id": "06-top-selling",
     "title": "Top 3 best-selling products",
     "difficulty": "Medium",
-    "tables": ["CTHD", "HANG_HOA"],
+    "tables": [
+      "CTHD",
+      "HANG_HOA"
+    ],
     "question": "Find the top 3 products by total quantity sold (SLBAN). Show MAHH, TENHH, and total quantity sold (as 'TongSL').",
     "solution": "SELECT h.MAHH, h.TENHH, SUM(c.SLBAN) AS TongSL\nFROM CTHD c\nJOIN HANG_HOA h ON c.MAHH = h.MAHH\nGROUP BY h.MAHH\nORDER BY TongSL DESC\nLIMIT 3;",
     "hint": "Use SUM(c.SLBAN), GROUP BY, ORDER BY DESC, LIMIT 3"
@@ -111,7 +75,10 @@
     "id": "07-employees-by-type",
     "title": "Employees grouped by role",
     "difficulty": "Medium",
-    "tables": ["NHAN_VIEN", "LOAI_NV"],
+    "tables": [
+      "NHAN_VIEN",
+      "LOAI_NV"
+    ],
     "question": "For each employee type, show the role name (TENLOAI) and the number of employees (as 'SoNV'). Only include types that have at least 5 employees.",
     "solution": "SELECT l.TENLOAI, COUNT(*) AS SoNV\nFROM NHAN_VIEN e\nJOIN LOAI_NV l ON e.MALNV = l.MALNV\nGROUP BY l.TENLOAI\nHAVING COUNT(*) >= 5;",
     "hint": "Use HAVING COUNT(*) >= 5 after GROUP BY"
@@ -120,88 +87,23 @@
     "id": "08-three-table-join",
     "title": "Invoice details with product and agent names",
     "difficulty": "Medium",
-    "tables": ["CTHD", "HANG_HOA", "HOA_DON", "DAI_LY"],
+    "tables": [
+      "CTHD",
+      "HANG_HOA",
+      "HOA_DON",
+      "DAI_LY"
+    ],
     "question": "Show invoice details: MAHD, TENHH (product name), SLBAN (quantity sold), and TENDL (agent name). Join CTHD → HANG_HOA for product and CTHD → HOA_DON → DAI_LY for agent.",
     "solution": "SELECT c.MAHD, h.TENHH, c.SLBAN, dl.TENDL\nFROM CTHD c\nJOIN HANG_HOA h ON c.MAHH = h.MAHH\nJOIN HOA_DON hd ON c.MAHD = hd.MAHD\nJOIN DAI_LY dl ON hd.MADL = dl.MADL;",
     "hint": "You need 3 JOINs: CTHD → HANG_HOA, CTHD → HOA_DON, HOA_DON → DAI_LY"
   },
   {
-    "id": "13-discount-analysis",
-    "title": "Invoices with high discounts",
-    "difficulty": "Medium",
-    "tables": ["CTHD", "HOA_DON", "HANG_HOA", "DAI_LY"],
-    "question": "Find invoice details where the discount rate (CKBAN) is 20% or more. Show MAHD, TENHH (product name), SLBAN, CKBAN, THANHTIEN, and TENDL (agent name). Order by discount descending.",
-    "solution": "SELECT c.MAHD, h.TENHH, c.SLBAN, c.CKBAN, c.THANHTIEN, dl.TENDL\nFROM CTHD c\nJOIN HANG_HOA h ON c.MAHH = h.MAHH\nJOIN HOA_DON hd ON c.MAHD = hd.MAHD\nJOIN DAI_LY dl ON hd.MADL = dl.MADL\nWHERE c.CKBAN >= 0.20\nORDER BY c.CKBAN DESC;",
-    "hint": "Filter with WHERE CKBAN >= 0.20"
-  },
-  {
-    "id": "19-sold-products",
-    "title": "Products that have been sold",
-    "difficulty": "Medium",
-    "tables": ["HANG_HOA", "CTHD"],
-    "question": "The warehouse manager wants to know which products have at least one sale. Show MAHH and TENHH for all products that appear in any invoice line item. Avoid listing the same product twice. Use a subquery instead of a JOIN.",
-    "solution": "SELECT MAHH, TENHH\nFROM HANG_HOA\nWHERE MAHH IN (SELECT DISTINCT MAHH FROM CTHD);",
-    "hint": "Use WHERE MAHH IN (SELECT DISTINCT MAHH FROM CTHD)"
-  },
-  {
-    "id": "20-employees-invoices",
-    "title": "Employee invoice activity",
-    "difficulty": "Medium",
-    "tables": ["NHAN_VIEN", "HOA_DON"],
-    "question": "The manager wants to review all employees and how many invoices each has created. Show MANV, HOTEN (employee name), and the number of invoices (as 'SoHoaDon'). Include employees who have not created any invoices. Order by invoice count ascending.",
-    "solution": "SELECT e.MANV, e.HOTEN, COUNT(hd.MAHD) AS SoHoaDon\nFROM NHAN_VIEN e\nLEFT JOIN HOA_DON hd ON e.MANV = hd.MANV\nGROUP BY e.MANV\nORDER BY SoHoaDon ASC;",
-    "hint": "Use LEFT JOIN to include employees with zero invoices"
-  },
-  {
-    "id": "21-unsold-products",
-    "title": "Products never sold",
-    "difficulty": "Medium",
-    "tables": ["HANG_HOA", "CTHD"],
-    "question": "The product team is reviewing slow-moving inventory. Find products that have NEVER appeared in any invoice. Show MAHH and TENHH. Use NOT IN with a subquery.",
-    "solution": "SELECT MAHH, TENHH\nFROM HANG_HOA\nWHERE MAHH NOT IN (SELECT DISTINCT MAHH FROM CTHD);",
-    "hint": "Use NOT IN with a subquery that selects MAHH from CTHD"
-  },
-  {
-    "id": "22-agents-with-invoices",
-    "title": "Agents who have created invoices",
-    "difficulty": "Medium",
-    "tables": ["DAI_LY", "HOA_DON"],
-    "question": "The sales director needs a list of agents who HAVE created at least one invoice. Show MADL and TENDL. Use EXISTS with a correlated subquery.",
-    "solution": "SELECT MADL, TENDL\nFROM DAI_LY dl\nWHERE EXISTS (SELECT 1 FROM HOA_DON WHERE MADL = dl.MADL);",
-    "hint": "Use EXISTS with a correlated subquery referencing dl.MADL"
-  },
-  {
-    "id": "23-agents-without-invoices",
-    "title": "Agents with no invoice activity",
-    "difficulty": "Medium",
-    "tables": ["DAI_LY", "HOA_DON"],
-    "question": "The sales director needs a list of agents who have NOT created any invoices. Show MADL and TENDL. Use NOT EXISTS with a correlated subquery.",
-    "solution": "SELECT MADL, TENDL\nFROM DAI_LY dl\nWHERE NOT EXISTS (SELECT 1 FROM HOA_DON WHERE MADL = dl.MADL);",
-    "hint": "Use NOT EXISTS with a correlated subquery referencing dl.MADL"
-  },
-  {
-    "id": "24-monthly-revenue",
-    "title": "Monthly revenue in 2008",
-    "difficulty": "Medium",
-    "tables": ["HOA_DON"],
-    "question": "The finance team needs a monthly revenue report for 2008. Show each month (as 'Thang', format YYYY-MM) and the total invoice value (as 'DoanhThu'). Order by month. Hint: Use substr(NGAYLAP, 1, 7) to extract the year-month part of the date.",
-    "solution": "SELECT substr(NGAYLAP, 1, 7) AS Thang, SUM(TONGTIEN) AS DoanhThu\nFROM HOA_DON\nWHERE NGAYLAP >= '2008-01-01' AND NGAYLAP < '2009-01-01'\nGROUP BY Thang\nORDER BY Thang;",
-    "hint": "Use substr(NGAYLAP, 1, 7) to extract YYYY-MM and GROUP BY to aggregate"
-  },
-  {
-    "id": "25-per-group-above-average",
-    "title": "Above average for their group",
-    "difficulty": "Medium",
-    "tables": ["HANG_HOA", "NHOM_HANG"],
-    "question": "Find products whose price is higher than the AVERAGE price of products in their OWN group. For example, a product in 'Bột' should be compared only to the average of 'Bột', not the overall average. Show MAHH, TENHH, MANHOM, DONGIA.",
-    "solution": "SELECT h.MAHH, h.TENHH, h.MANHOM, h.DONGIA\nFROM HANG_HOA h\nWHERE h.DONGIA > (\n  SELECT AVG(DONGIA)\n  FROM HANG_HOA\n  WHERE MANHOM = h.MANHOM\n);",
-    "hint": "Use a correlated subquery: the inner WHERE references the outer table's MANHOM"
-  },
-  {
     "id": "09-subquery",
     "title": "Products above average price",
     "difficulty": "Hard",
-    "tables": ["HANG_HOA"],
+    "tables": [
+      "HANG_HOA"
+    ],
     "question": "Find products whose price (DONGIA) is higher than the average price of all products. Show MAHH, TENHH, DONGIA.",
     "solution": "SELECT MAHH, TENHH, DONGIA\nFROM HANG_HOA\nWHERE DONGIA > (SELECT AVG(DONGIA) FROM HANG_HOA);",
     "hint": "Use WHERE DONGIA > (SELECT AVG(DONGIA) FROM HANG_HOA)"
@@ -210,25 +112,204 @@
     "id": "10-most-valuable-agent",
     "title": "Highest-spending agent",
     "difficulty": "Hard",
-    "tables": ["CTHD", "HOA_DON", "DAI_LY"],
+    "tables": [
+      "CTHD",
+      "HOA_DON",
+      "DAI_LY"
+    ],
     "question": "Which agent (TENDL) spent the most total money across all invoices? Show TENDL and total spent (as 'TongChiTieu'). Order by total descending, limit 1.",
     "solution": "SELECT dl.TENDL, SUM(c.THANHTIEN) AS TongChiTieu\nFROM CTHD c\nJOIN HOA_DON hd ON c.MAHD = hd.MAHD\nJOIN DAI_LY dl ON hd.MADL = dl.MADL\nGROUP BY dl.MADL\nORDER BY TongChiTieu DESC\nLIMIT 1;",
     "hint": "Use 3 JOINs, GROUP BY agent, ORDER BY SUM, LIMIT 1"
   },
   {
+    "id": "11-date-range",
+    "title": "Invoices in a date range",
+    "difficulty": "Easy",
+    "tables": [
+      "HOA_DON",
+      "DAI_LY"
+    ],
+    "question": "Show all invoices from February 2008. Display MAHD, NGAYLAP, TONGTIEN, and TENDL (agent name). Order by invoice code.",
+    "solution": "SELECT hd.MAHD, hd.NGAYLAP, hd.TONGTIEN, dl.TENDL\nFROM HOA_DON hd\nJOIN DAI_LY dl ON hd.MADL = dl.MADL\nWHERE hd.NGAYLAP >= '2008-02-01' AND hd.NGAYLAP < '2008-03-01'\nORDER BY hd.MAHD;",
+    "hint": "Use WHERE NGAYLAP >= '2008-02-01' AND NGAYLAP < '2008-03-01'"
+  },
+  {
     "id": "12-team-performance",
     "title": "Team revenue ranking",
     "difficulty": "Hard",
-    "tables": ["CTHD", "HOA_DON", "NHAN_VIEN", "DOI"],
+    "tables": [
+      "CTHD",
+      "HOA_DON",
+      "NHAN_VIEN",
+      "DOI"
+    ],
     "question": "Calculate total revenue generated by each team. Show MADOI (team code) and total revenue (as 'DoanhThu'). Only include teams that have generated revenue. Order by revenue descending.",
     "solution": "SELECT e.MADOI, SUM(c.THANHTIEN) AS DoanhThu\nFROM CTHD c\nJOIN HOA_DON hd ON c.MAHD = hd.MAHD\nJOIN NHAN_VIEN e ON hd.MANV = e.MANV\nWHERE e.MADOI IS NOT NULL\nGROUP BY e.MADOI\nORDER BY DoanhThu DESC;",
     "hint": "Join CTHD → HOA_DON → NHAN_VIEN, filtering out NULL teams with WHERE e.MADOI IS NOT NULL"
   },
   {
+    "id": "13-discount-analysis",
+    "title": "Invoices with high discounts",
+    "difficulty": "Medium",
+    "tables": [
+      "CTHD",
+      "HOA_DON",
+      "HANG_HOA",
+      "DAI_LY"
+    ],
+    "question": "Find invoice details where the discount rate (CKBAN) is 20% or more. Show MAHD, TENHH (product name), SLBAN, CKBAN, THANHTIEN, and TENDL (agent name). Order by discount descending.",
+    "solution": "SELECT c.MAHD, h.TENHH, c.SLBAN, c.CKBAN, c.THANHTIEN, dl.TENDL\nFROM CTHD c\nJOIN HANG_HOA h ON c.MAHH = h.MAHH\nJOIN HOA_DON hd ON c.MAHD = hd.MAHD\nJOIN DAI_LY dl ON hd.MADL = dl.MADL\nWHERE c.CKBAN >= 0.20\nORDER BY c.CKBAN DESC;",
+    "hint": "Filter with WHERE CKBAN >= 0.20"
+  },
+  {
+    "id": "14-distinct-groups",
+    "title": "Distinct product groups",
+    "difficulty": "Easy",
+    "tables": [
+      "HANG_HOA"
+    ],
+    "question": "Your inventory manager wants to know how many different product groups the company sells products in. Show all distinct group codes (MANHOM) from the product catalog. This gives an overview of which product categories are active.",
+    "solution": "SELECT DISTINCT MANHOM\nFROM HANG_HOA\nORDER BY MANHOM;",
+    "hint": "Use the DISTINCT keyword to remove duplicate values"
+  },
+  {
+    "id": "15-like-search",
+    "title": "Search agents by name",
+    "difficulty": "Easy",
+    "tables": [
+      "DAI_LY"
+    ],
+    "question": "The sales team needs a list of agents whose name contains the phrase 'bách hóa' (general store). Show the agent code (MADL), name (TENDL), and address (DIACHI).",
+    "solution": "SELECT MADL, TENDL, DIACHI\nFROM DAI_LY\nWHERE TENDL LIKE '%bách hóa%';",
+    "hint": "Use WHERE TENDL LIKE with % wildcards around the search term"
+  },
+  {
+    "id": "16-is-null-check",
+    "title": "Packaging without secondary unit",
+    "difficulty": "Easy",
+    "tables": [
+      "HINH_THUC_DONG_GOI"
+    ],
+    "question": "Some packaging formats have a secondary packaging level (LOC) and some don't. Show all packaging formats that do NOT have a lốc (LOC) value — meaning they only sell by the thùng (case). Display MAHTDG and THUNG.",
+    "solution": "SELECT MAHTDG, THUNG\nFROM HINH_THUC_DONG_GOI\nWHERE LOC IS NULL;",
+    "hint": "Use WHERE LOC IS NULL to find rows with no LOC value"
+  },
+  {
+    "id": "17-in-clause",
+    "title": "Products in selected groups",
+    "difficulty": "Easy",
+    "tables": [
+      "HANG_HOA"
+    ],
+    "question": "The marketing team is running a promotion and needs all products from the 'Bột' (BOT) and 'Thực phẩm' (TP) groups. Show MAHH, TENHH, and DONGIA. Use a single WHERE clause instead of multiple OR conditions.",
+    "solution": "SELECT MAHH, TENHH, DONGIA\nFROM HANG_HOA\nWHERE MANHOM IN ('BOT', 'TP');",
+    "hint": "Use IN ('BOT', 'TP') instead of multiple OR conditions"
+  },
+  {
+    "id": "18-min-max-avg",
+    "title": "Price statistics",
+    "difficulty": "Easy",
+    "tables": [
+      "HANG_HOA"
+    ],
+    "question": "The finance team needs a quick overview of the product pricing. Show the cheapest price (as 'GiaThapNhat'), the most expensive price (as 'GiaCaoNhat'), and the average price (as 'GiaTrungBinh') across all products.",
+    "solution": "SELECT MIN(DONGIA) AS GiaThapNhat, MAX(DONGIA) AS GiaCaoNhat, AVG(DONGIA) AS GiaTrungBinh\nFROM HANG_HOA;",
+    "hint": "Use MIN(), MAX(), and AVG() aggregate functions"
+  },
+  {
+    "id": "19-sold-products",
+    "title": "Products that have been sold",
+    "difficulty": "Medium",
+    "tables": [
+      "HANG_HOA",
+      "CTHD"
+    ],
+    "question": "The warehouse manager wants to know which products have at least one sale. Show MAHH and TENHH for all products that appear in any invoice line item. Avoid listing the same product twice. Use a subquery instead of a JOIN.",
+    "solution": "SELECT MAHH, TENHH\nFROM HANG_HOA\nWHERE MAHH IN (SELECT DISTINCT MAHH FROM CTHD);",
+    "hint": "Use WHERE MAHH IN (SELECT DISTINCT MAHH FROM CTHD)"
+  },
+  {
+    "id": "20-employees-invoices",
+    "title": "Employee invoice activity",
+    "difficulty": "Medium",
+    "tables": [
+      "NHAN_VIEN",
+      "HOA_DON"
+    ],
+    "question": "The manager wants to review all employees and how many invoices each has created. Show MANV, HOTEN (employee name), and the number of invoices (as 'SoHoaDon'). Include employees who have not created any invoices. Order by invoice count ascending.",
+    "solution": "SELECT e.MANV, e.HOTEN, COUNT(hd.MAHD) AS SoHoaDon\nFROM NHAN_VIEN e\nLEFT JOIN HOA_DON hd ON e.MANV = hd.MANV\nGROUP BY e.MANV\nORDER BY SoHoaDon ASC;",
+    "hint": "Use LEFT JOIN to include employees with zero invoices"
+  },
+  {
+    "id": "21-unsold-products",
+    "title": "Products never sold",
+    "difficulty": "Medium",
+    "tables": [
+      "HANG_HOA",
+      "CTHD"
+    ],
+    "question": "The product team is reviewing slow-moving inventory. Find products that have NEVER appeared in any invoice. Show MAHH and TENHH. Use NOT IN with a subquery.",
+    "solution": "SELECT MAHH, TENHH\nFROM HANG_HOA\nWHERE MAHH NOT IN (SELECT DISTINCT MAHH FROM CTHD);",
+    "hint": "Use NOT IN with a subquery that selects MAHH from CTHD"
+  },
+  {
+    "id": "22-agents-with-invoices",
+    "title": "Agents who have created invoices",
+    "difficulty": "Medium",
+    "tables": [
+      "DAI_LY",
+      "HOA_DON"
+    ],
+    "question": "The sales director needs a list of agents who HAVE created at least one invoice. Show MADL and TENDL. Use EXISTS with a correlated subquery.",
+    "solution": "SELECT MADL, TENDL\nFROM DAI_LY dl\nWHERE EXISTS (SELECT 1 FROM HOA_DON WHERE MADL = dl.MADL);",
+    "hint": "Use EXISTS with a correlated subquery referencing dl.MADL"
+  },
+  {
+    "id": "23-agents-without-invoices",
+    "title": "Agents with no invoice activity",
+    "difficulty": "Medium",
+    "tables": [
+      "DAI_LY",
+      "HOA_DON"
+    ],
+    "question": "The sales director needs a list of agents who have NOT created any invoices. Show MADL and TENDL. Use NOT EXISTS with a correlated subquery.",
+    "solution": "SELECT MADL, TENDL\nFROM DAI_LY dl\nWHERE NOT EXISTS (SELECT 1 FROM HOA_DON WHERE MADL = dl.MADL);",
+    "hint": "Use NOT EXISTS with a correlated subquery referencing dl.MADL"
+  },
+  {
+    "id": "24-monthly-revenue",
+    "title": "Monthly revenue in 2008",
+    "difficulty": "Medium",
+    "tables": [
+      "HOA_DON"
+    ],
+    "question": "The finance team needs a monthly revenue report for 2008. Show each month (as 'Thang', format YYYY-MM) and the total invoice value (as 'DoanhThu'). Order by month. Hint: Use substr(NGAYLAP, 1, 7) to extract the year-month part of the date.",
+    "solution": "SELECT substr(NGAYLAP, 1, 7) AS Thang, SUM(TONGTIEN) AS DoanhThu\nFROM HOA_DON\nWHERE NGAYLAP >= '2008-01-01' AND NGAYLAP < '2009-01-01'\nGROUP BY Thang\nORDER BY Thang;",
+    "hint": "Use substr(NGAYLAP, 1, 7) to extract YYYY-MM and GROUP BY to aggregate"
+  },
+  {
+    "id": "25-per-group-above-average",
+    "title": "Above average for their group",
+    "difficulty": "Medium",
+    "tables": [
+      "HANG_HOA",
+      "NHOM_HANG"
+    ],
+    "question": "Find products whose price is higher than the AVERAGE price of products in their OWN group. For example, a product in 'Bột' should be compared only to the average of 'Bột', not the overall average. Show MAHH, TENHH, MANHOM, DONGIA.",
+    "solution": "SELECT h.MAHH, h.TENHH, h.MANHOM, h.DONGIA\nFROM HANG_HOA h\nWHERE h.DONGIA > (\n  SELECT AVG(DONGIA)\n  FROM HANG_HOA\n  WHERE MANHOM = h.MANHOM\n);",
+    "hint": "Use a correlated subquery: the inner WHERE references the outer table's MANHOM"
+  },
+  {
     "id": "26-all-groups-division",
     "title": "Agents buying from all groups",
     "difficulty": "Hard",
-    "tables": ["DAI_LY", "HOA_DON", "CTHD", "HANG_HOA", "NHOM_HANG"],
+    "tables": [
+      "DAI_LY",
+      "HOA_DON",
+      "CTHD",
+      "HANG_HOA",
+      "NHOM_HANG"
+    ],
     "question": "Find agents who have purchased products from ALL product groups. This is a relational division problem: there should NOT exist a product group that the agent has NOT purchased from. Show MADL and TENDL. Use double NOT EXISTS.",
     "solution": "SELECT dl.MADL, dl.TENDL\nFROM DAI_LY dl\nWHERE NOT EXISTS (\n  SELECT nh.MANHOM\n  FROM NHOM_HANG nh\n  WHERE NOT EXISTS (\n    SELECT 1\n    FROM CTHD c\n    JOIN HOA_DON hd ON c.MAHD = hd.MAHD\n    JOIN HANG_HOA h ON c.MAHH = h.MAHH\n    WHERE hd.MADL = dl.MADL\n      AND h.MANHOM = nh.MANHOM\n  )\n);",
     "hint": "Use double NOT EXISTS: 'there is no product group that this agent has not bought from'"
@@ -237,7 +318,10 @@
     "id": "27-product-pairs",
     "title": "Product pairs in the same group",
     "difficulty": "Hard",
-    "tables": ["HANG_HOA", "NHOM_HANG"],
+    "tables": [
+      "HANG_HOA",
+      "NHOM_HANG"
+    ],
     "question": "The product manager wants to see all possible pairs of products that belong to the same group for cross-promotion. Show both product names (as 'SP1' and 'SP2') and the shared group name (as 'NhomHang'). Each pair should appear only once. Use a self-join.",
     "solution": "SELECT a.TENHH AS SP1, b.TENHH AS SP2, n.TENNHOM AS NhomHang\nFROM HANG_HOA a\nJOIN HANG_HOA b ON a.MANHOM = b.MANHOM AND a.MAHH < b.MAHH\nJOIN NHOM_HANG n ON a.MANHOM = n.MANHOM\nORDER BY n.TENNHOM, a.TENHH;",
     "hint": "Self-join HANG_HOA on MANHOM with a.MAHH < b.MAHH to avoid duplicate pairs"
@@ -246,7 +330,11 @@
     "id": "28-avg-employee-revenue",
     "title": "Average revenue per employee",
     "difficulty": "Hard",
-    "tables": ["NHAN_VIEN", "HOA_DON", "CTHD"],
+    "tables": [
+      "NHAN_VIEN",
+      "HOA_DON",
+      "CTHD"
+    ],
     "question": "Management wants to know the average revenue generated per employee. First calculate each employee's total revenue (from invoice line items), then find the average across all employees. Show the result as 'DoanhThuTrungBinh'. Include employees with zero revenue. Use a derived table (subquery in FROM).",
     "solution": "SELECT AVG(emp_rev) AS DoanhThuTrungBinh\nFROM (\n  SELECT e.MANV, COALESCE(SUM(c.THANHTIEN), 0) AS emp_rev\n  FROM NHAN_VIEN e\n  LEFT JOIN HOA_DON hd ON e.MANV = hd.MANV\n  LEFT JOIN CTHD c ON hd.MAHD = c.MAHD\n  GROUP BY e.MANV\n);",
     "hint": "Use a subquery in FROM to calculate per-employee revenue first, then average the results"
@@ -255,7 +343,11 @@
     "id": "29-never-discounted",
     "title": "Products never sold at deep discount",
     "difficulty": "Hard",
-    "tables": ["HANG_HOA", "CTHD", "HOA_DON"],
+    "tables": [
+      "HANG_HOA",
+      "CTHD",
+      "HOA_DON"
+    ],
     "question": "The pricing team wants to find products that have NEVER been sold at a discount rate above 15% (CKBAN > 0.15). Show MAHH and TENHH. Use a correlated NOT EXISTS subquery.",
     "solution": "SELECT h.MAHH, h.TENHH\nFROM HANG_HOA h\nWHERE NOT EXISTS (\n  SELECT 1\n  FROM CTHD c\n  JOIN HOA_DON hd ON c.MAHD = hd.MAHD\n  WHERE c.MAHH = h.MAHH\n    AND c.CKBAN > 0.15\n);",
     "hint": "Use NOT EXISTS with a correlated subquery: c.MAHH = h.MAHH"
@@ -264,7 +356,12 @@
     "id": "30-top-agents",
     "title": "Top agents by group coverage and spending",
     "difficulty": "Hard",
-    "tables": ["DAI_LY", "HOA_DON", "CTHD", "HANG_HOA"],
+    "tables": [
+      "DAI_LY",
+      "HOA_DON",
+      "CTHD",
+      "HANG_HOA"
+    ],
     "question": "The sales VP wants to identify top-performing agents. Find agents who have purchased from more than 2 different product groups AND have total spending (sum of THANHTIEN) over 1,000,000 VND. Show MADL, TENDL, number of groups (as 'SoNhom'), and total spending (as 'TongChiTieu').",
     "solution": "SELECT dl.MADL, dl.TENDL, COUNT(DISTINCT h.MANHOM) AS SoNhom, SUM(c.THANHTIEN) AS TongChiTieu\nFROM CTHD c\nJOIN HOA_DON hd ON c.MAHD = hd.MAHD\nJOIN DAI_LY dl ON hd.MADL = dl.MADL\nJOIN HANG_HOA h ON c.MAHH = h.MAHH\nGROUP BY dl.MADL\nHAVING COUNT(DISTINCT h.MANHOM) > 2\n   AND SUM(c.THANHTIEN) > 1000000\nORDER BY TongChiTieu DESC;",
     "hint": "Use GROUP BY agent with HAVING that has TWO conditions: group count > 2 AND total > 1000000"
@@ -273,9 +370,244 @@
     "id": "31-custom-sort",
     "title": "Custom invoice sorting",
     "difficulty": "Hard",
-    "tables": ["HOA_DON", "DAI_LY"],
+    "tables": [
+      "HOA_DON",
+      "DAI_LY"
+    ],
     "question": "The accountant has a special request: show all invoices but with a custom sort order. Agent 'Cửa hàng tổng hợp DDC' (DL003) should appear first (they are a VIP client), followed by all other agents ordered by invoice total descending. Show MAHD, TENDL, and TONGTIEN. Use CASE in ORDER BY.",
     "solution": "SELECT hd.MAHD, dl.TENDL, hd.TONGTIEN\nFROM HOA_DON hd\nJOIN DAI_LY dl ON hd.MADL = dl.MADL\nORDER BY\n  CASE WHEN dl.MADL = 'DL003' THEN 0 ELSE 1 END,\n  hd.TONGTIEN DESC;",
     "hint": "Use CASE in ORDER BY to assign sort priority: 0 for VIP agent (DL003), 1 for everyone else"
+  },
+  {
+    "id": "32-delivery-note-employees",
+    "title": "Delivery notes with employee names",
+    "difficulty": "Medium",
+    "tables": [
+      "PHIEU_XUAT",
+      "NHAN_VIEN"
+    ],
+    "question": "The warehouse manager wants to see all delivery notes with the employee who received each shipment. Show MAPX, NGAYXUAT, and HOTEN. Order by NGAYXUAT.",
+    "solution": "SELECT px.MAPX, px.NGAYXUAT, nv.HOTEN\nFROM PHIEU_XUAT px\nJOIN NHAN_VIEN nv ON px.MANV = nv.MANV\nORDER BY px.NGAYXUAT;",
+    "hint": "Use JOIN PHIEU_XUAT with NHAN_VIEN ON MANV"
+  },
+  {
+    "id": "33-delivery-line-items",
+    "title": "Delivery note line items with product names",
+    "difficulty": "Medium",
+    "tables": [
+      "CTPX",
+      "HANG_HOA"
+    ],
+    "question": "Show all delivery line items with product information. Display MAPX, MAHH, TENHH, and SOLUONG. Order by MAPX then MAHH.",
+    "solution": "SELECT c.MAPX, c.MAHH, h.TENHH, c.SOLUONG\nFROM CTPX c\nJOIN HANG_HOA h ON c.MAHH = h.MAHH\nORDER BY c.MAPX, c.MAHH;",
+    "hint": "Use JOIN CTPX with HANG_HOA ON MAHH"
+  },
+  {
+    "id": "34-total-delivered-per-product",
+    "title": "Total quantity delivered per product",
+    "difficulty": "Medium",
+    "tables": [
+      "CTPX",
+      "HANG_HOA"
+    ],
+    "question": "The warehouse team needs to know the total quantity delivered for each product. Show MAHH, TENHH, and total quantity (as TongSLXuat). Order by total descending.",
+    "solution": "SELECT c.MAHH, h.TENHH, SUM(c.SOLUONG) AS TongSLXuat\nFROM CTPX c\nJOIN HANG_HOA h ON c.MAHH = h.MAHH\nGROUP BY c.MAHH\nORDER BY TongSLXuat DESC;",
+    "hint": "Use GROUP BY with SUM and ORDER BY DESC"
+  },
+  {
+    "id": "35-products-never-delivered",
+    "title": "Products never delivered",
+    "difficulty": "Medium",
+    "tables": [
+      "HANG_HOA",
+      "CTPX"
+    ],
+    "question": "The warehouse supervisor wants to know which products have never been requested for delivery. Show MAHH and TENHH for products that do not appear in any delivery note.",
+    "solution": "SELECT MAHH, TENHH\nFROM HANG_HOA\nWHERE MAHH NOT IN (SELECT DISTINCT MAHH FROM CTPX);",
+    "hint": "Use NOT IN with a subquery selecting MAHH from CTPX"
+  },
+  {
+    "id": "36-delivered-more-than-sold",
+    "title": "Products delivered more than sold",
+    "difficulty": "Hard",
+    "tables": [
+      "HANG_HOA",
+      "CTPX",
+      "CTHD"
+    ],
+    "question": "The supply chain director wants to compare delivery vs sales. Find products where total delivered quantity exceeds total sold quantity. Show MAHH and TENHH.",
+    "solution": "SELECT h.MAHH, h.TENHH\nFROM HANG_HOA h\nWHERE h.MAHH IN (\n  SELECT MAHH FROM CTPX GROUP BY MAHH\n  HAVING SUM(SOLUONG) > (\n    SELECT SUM(SLBAN) FROM CTHD WHERE MAHH = h.MAHH\n  )\n)\nAND h.MAHH IN (SELECT MAHH FROM CTHD)\nORDER BY h.MAHH;",
+    "hint": "Use a correlated subquery with HAVING to compare delivery and sales quantities"
+  },
+  {
+    "id": "37-union-deliveries-sales",
+    "title": "Products in deliveries or sales",
+    "difficulty": "Medium",
+    "tables": [
+      "CTPX",
+      "CTHD"
+    ],
+    "question": "The logistics team wants a consolidated product list. Show all distinct product codes that have appeared in either a delivery note OR an invoice. Use UNION.",
+    "solution": "SELECT MAHH FROM CTHD\nUNION\nSELECT MAHH FROM CTPX\nORDER BY MAHH;",
+    "hint": "Use UNION between CTHD and CTPX subqueries"
+  },
+  {
+    "id": "38-intersect-deliveries-sales",
+    "title": "Products in both deliveries and sales",
+    "difficulty": "Medium",
+    "tables": [
+      "CTPX",
+      "CTHD"
+    ],
+    "question": "Find products that have been BOTH delivered from warehouse AND sold via invoices. Show MAHH. Use INTERSECT.",
+    "solution": "SELECT MAHH FROM CTHD\nINTERSECT\nSELECT MAHH FROM CTPX\nORDER BY MAHH;",
+    "hint": "Use INTERSECT between CTHD and CTPX subqueries"
+  },
+  {
+    "id": "39-delivered-but-not-sold",
+    "title": "Products delivered but never sold",
+    "difficulty": "Hard",
+    "tables": [
+      "HANG_HOA",
+      "CTPX",
+      "CTHD"
+    ],
+    "question": "Find products that have been delivered from warehouse but NEVER sold via invoice. Show MAHH and TENHH. Use EXCEPT to find the difference.",
+    "solution": "SELECT h.MAHH, h.TENHH\nFROM HANG_HOA h\nWHERE h.MAHH IN (\n  SELECT MAHH FROM CTPX\n  EXCEPT\n  SELECT MAHH FROM CTHD\n);",
+    "hint": "Use EXCEPT to subtract CTHD products from CTPX products, then JOIN for names"
+  },
+  {
+    "id": "40-employees-both-activities",
+    "title": "Employees with sales and delivery activity",
+    "difficulty": "Hard",
+    "tables": [
+      "NHAN_VIEN",
+      "HOA_DON",
+      "PHIEU_XUAT"
+    ],
+    "question": "Find employees who have BOTH issued invoices AND received warehouse delivery notes. Show MANV and HOTEN. Use INTERSECT and a main query.",
+    "solution": "SELECT n.MANV, n.HOTEN\nFROM NHAN_VIEN n\nWHERE n.MANV IN (\n  SELECT MANV FROM HOA_DON\n  INTERSECT\n  SELECT MANV FROM PHIEU_XUAT\n)\nORDER BY n.MANV;",
+    "hint": "Use INTERSECT to find employees in both HOA_DON and PHIEU_XUAT"
+  },
+  {
+    "id": "41-price-tiers",
+    "title": "Product price tier classification",
+    "difficulty": "Medium",
+    "tables": [
+      "HANG_HOA"
+    ],
+    "question": "Classify products into price tiers: Thap (DONGIA < 3000), Trung binh (3000-10000), and Cao (>10000). Show MAHH, TENHH, DONGIA, and the tier (as MucGia). Order by DONGIA.",
+    "solution": "SELECT MAHH, TENHH, DONGIA,\n  CASE\n    WHEN DONGIA < 3000 THEN 'Thap'\n    WHEN DONGIA BETWEEN 3000 AND 10000 THEN 'Trung binh'\n    WHEN DONGIA > 10000 THEN 'Cao'\n  END AS MucGia\nFROM HANG_HOA\nORDER BY DONGIA;",
+    "hint": "Use CASE with WHEN ... THEN ... END to classify prices into tiers"
+  },
+  {
+    "id": "42-inventory-by-group",
+    "title": "Inventory status by product group",
+    "difficulty": "Medium",
+    "tables": [
+      "HANG_HOA",
+      "NHOM_HANG"
+    ],
+    "question": "For each product group, show TENNHOM, total products (as TongSP), and how many products are well-stocked with SLTON >= 200 (as SoSPTonNhieu). Use SUM with CASE.",
+    "solution": "SELECT n.TENNHOM, COUNT(*) AS TongSP,\n  SUM(CASE WHEN h.SLTON >= 200 THEN 1 ELSE 0 END) AS SoSPTonNhieu\nFROM HANG_HOA h\nJOIN NHOM_HANG n ON h.MANHOM = n.MANHOM\nGROUP BY n.TENNHOM;",
+    "hint": "Use SUM(CASE WHEN ... THEN 1 ELSE 0 END) for conditional counting"
+  },
+  {
+    "id": "43-delivery-pivot-by-group",
+    "title": "Delivery pivot by product group",
+    "difficulty": "Hard",
+    "tables": [
+      "PHIEU_XUAT",
+      "CTPX",
+      "NHAN_VIEN",
+      "HANG_HOA"
+    ],
+    "question": "The warehouse manager needs to see each employee's delivery distribution across product groups. For each employee who has made deliveries, show HOTEN, and three pivot columns: SoLuongBOT, SoLuongTP, SoLuongCSTT (total items delivered from each group).",
+    "solution": "SELECT nv.HOTEN,\n  SUM(CASE WHEN h.MANHOM = 'BOT' THEN c.SOLUONG ELSE 0 END) AS SoLuongBOT,\n  SUM(CASE WHEN h.MANHOM = 'TP' THEN c.SOLUONG ELSE 0 END) AS SoLuongTP,\n  SUM(CASE WHEN h.MANHOM = 'CSTT' THEN c.SOLUONG ELSE 0 END) AS SoLuongCSTT\nFROM PHIEU_XUAT px\nJOIN NHAN_VIEN nv ON px.MANV = nv.MANV\nJOIN CTPX c ON px.MAPX = c.MAPX\nJOIN HANG_HOA h ON c.MAHH = h.MAHH\nGROUP BY nv.MANV\nORDER BY nv.HOTEN;",
+    "hint": "Use CASE inside SUM for each product group to create a pivot table"
+  },
+  {
+    "id": "44-employees-district-search",
+    "title": "Employees in numbered districts",
+    "difficulty": "Medium",
+    "tables": [
+      "NHAN_VIEN"
+    ],
+    "question": "Find employees whose address contains Q followed by a digit (indicating a numbered district). Show HOTEN and DIACHI. Use the _ wildcard to match the exact character after Q. Order by HOTEN.",
+    "solution": "SELECT HOTEN, DIACHI\nFROM NHAN_VIEN\nWHERE DIACHI LIKE '%Q_%'\nORDER BY HOTEN;",
+    "hint": "Use LIKE with _ wildcard: %Q_% matches Q followed by any single character"
+  },
+  {
+    "id": "45-products-gram-weight",
+    "title": "Products with gram weight in name",
+    "difficulty": "Medium",
+    "tables": [
+      "HANG_HOA"
+    ],
+    "question": "Find products whose name ends with g (indicating weight in grams). Show MAHH and TENHH. Order by MAHH.",
+    "solution": "SELECT MAHH, TENHH\nFROM HANG_HOA\nWHERE TENHH LIKE '%g'\nORDER BY MAHH;",
+    "hint": "Use LIKE with %g pattern to find names ending with g"
+  },
+  {
+    "id": "46-brand-group-verification",
+    "title": "Brand name verification by group",
+    "difficulty": "Hard",
+    "tables": [
+      "HANG_HOA",
+      "NHOM_HANG"
+    ],
+    "question": "The marketing team wants to verify that product names match their assigned group. For each product, show MAHH, TENHH, TENNHOM, and a column KhopNhom with value Co if the name matches the group's known brands, otherwise Khong. Brands: BOT -> Omo/Viso, CSTT -> Close-up/Lifebouy/Clear/Dove, CSSD -> Ponds, TP -> Icetea/Chao/Bot nem.",
+    "solution": "SELECT h.MAHH, h.TENHH, n.TENNHOM,\n  CASE\n    WHEN (h.MANHOM = 'BOT' AND (h.TENHH LIKE '%Omo%' OR h.TENHH LIKE '%Viso%'))\n      OR (h.MANHOM = 'CSTT' AND (h.TENHH LIKE '%Close-up%' OR h.TENHH LIKE '%Lifebouy%'\n           OR h.TENHH LIKE '%Clear%' OR h.TENHH LIKE '%Dove%'))\n      OR (h.MANHOM = 'CSSD' AND h.TENHH LIKE '%Ponds%')\n      OR (h.MANHOM = 'TP' AND (h.TENHH LIKE '%Icetea%' OR h.TENHH LIKE '%Chao%'\n           OR h.TENHH LIKE '%Bot nem%'))\n    THEN 'Co'\n    ELSE 'Khong'\n  END AS KhopNhom\nFROM HANG_HOA h\nJOIN NHOM_HANG n ON h.MANHOM = n.MANHOM\nORDER BY h.MAHH;",
+    "hint": "Use CASE with multiple LIKE conditions to check brand-group alignment"
+  },
+  {
+    "id": "47-team-role-pairs",
+    "title": "Employees on same team with different roles",
+    "difficulty": "Hard",
+    "tables": [
+      "NHAN_VIEN"
+    ],
+    "question": "Find pairs of employees who work in the same team (MADOI) but have different job roles (MALNV). Show both names (as NV1 and NV2), their roles (as VaiTro1 and VaiTro2), and the team code. Each pair should appear once. Order by team code.",
+    "solution": "SELECT a.HOTEN AS NV1, b.HOTEN AS NV2,\n       a.MALNV AS VaiTro1, b.MALNV AS VaiTro2, a.MADOI\nFROM NHAN_VIEN a\nJOIN NHAN_VIEN b ON a.MADOI = b.MADOI AND a.MANV < b.MANV AND a.MALNV != b.MALNV\nORDER BY a.MADOI;",
+    "hint": "Self-join NHAN_VIEN on MADOI with a.MANV < b.MANV and different MALNV"
+  },
+  {
+    "id": "48-products-nearby-pricing",
+    "title": "Products with nearby pricing in the same group",
+    "difficulty": "Hard",
+    "tables": [
+      "HANG_HOA",
+      "NHOM_HANG"
+    ],
+    "question": "The pricing team wants to find products in the same group with similar prices (difference <= 5000 VND, positive difference). Show both product names (as SP1 and SP2), their prices, price difference (as ChenhLech), and group name. SP1 should be cheaper. Order by group and difference.",
+    "solution": "SELECT a.TENHH AS SP1, b.TENHH AS SP2,\n       a.DONGIA AS Gia1, b.DONGIA AS Gia2,\n       b.DONGIA - a.DONGIA AS ChenhLech, n.TENNHOM AS NhomHang\nFROM HANG_HOA a\nJOIN HANG_HOA b ON a.MANHOM = b.MANHOM AND a.MAHH < b.MAHH\nJOIN NHOM_HANG n ON a.MANHOM = n.MANHOM\nWHERE a.DONGIA < b.DONGIA AND b.DONGIA - a.DONGIA <= 5000\nORDER BY n.TENNHOM, ChenhLech;",
+    "hint": "Self-join HANG_HOA on MANHOM, filter by positive price difference <= 5000"
+  },
+  {
+    "id": "49-team-activity-comparison",
+    "title": "Team activity: delivery vs sales comparison",
+    "difficulty": "Hard",
+    "tables": [
+      "DOI",
+      "NHAN_VIEN",
+      "PHIEU_XUAT",
+      "HOA_DON"
+    ],
+    "question": "Compare team performance across two activity types. For each team, show MADOI, number of delivery notes (as SoPhieuXuat), and number of invoices (as SoHoaDon). Use COUNT DISTINCT. Include teams with zero activity. Order by team code.",
+    "solution": "SELECT d.MADOI,\n  COUNT(DISTINCT px.MAPX) AS SoPhieuXuat,\n  COUNT(DISTINCT hd.MAHD) AS SoHoaDon\nFROM DOI d\nLEFT JOIN NHAN_VIEN nv ON d.MADOI = nv.MADOI\nLEFT JOIN PHIEU_XUAT px ON nv.MANV = px.MANV\nLEFT JOIN HOA_DON hd ON nv.MANV = hd.MANV\nGROUP BY d.MADOI\nORDER BY d.MADOI;",
+    "hint": "Use LEFT JOIN through DOI -> NHAN_VIEN -> PHIEU_XUAT and HOA_DON"
+  },
+  {
+    "id": "50-product-status-report",
+    "title": "Product status: sold, delivered, both, or inactive",
+    "difficulty": "Hard",
+    "tables": [
+      "HANG_HOA",
+      "CTHD",
+      "CTPX"
+    ],
+    "question": "Create a product status report. Show MAHH, TENHH, and a column TrangThai with values: Da ban va xuat kho (sold AND delivered), Chi ban (only sold), Chi xuat (only delivered), Khong hoat dong (no activity). Use CASE with EXISTS.",
+    "solution": "SELECT h.MAHH, h.TENHH,\n  CASE\n    WHEN EXISTS (SELECT 1 FROM CTHD WHERE MAHH = h.MAHH)\n     AND EXISTS (SELECT 1 FROM CTPX WHERE MAHH = h.MAHH)\n      THEN 'Da ban va xuat kho'\n    WHEN EXISTS (SELECT 1 FROM CTHD WHERE MAHH = h.MAHH)\n      THEN 'Chi ban'\n    WHEN EXISTS (SELECT 1 FROM CTPX WHERE MAHH = h.MAHH)\n      THEN 'Chi xuat'\n    ELSE 'Khong hoat dong'\n  END AS TrangThai\nFROM HANG_HOA h\nORDER BY h.MAHH;",
+    "hint": "Use CASE with multiple EXISTS subqueries to classify each product"
   }
 ]
