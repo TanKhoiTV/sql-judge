@@ -316,13 +316,17 @@ body {
 	color: #8b949e;
 	font-size: 12px;
 	user-select: none;
-	transition: transform 0.15s, color 0.1s;
+	transition:
+		transform 0.15s,
+		color 0.1s;
 	border-left: 1px solid #30363d;
-	title: "Toggle panel";
 }
 .bottom-toggle:hover {
 	color: #f0f6fc;
 	background: #21262d;
+}
+.bottom-panel.collapsed .bottom-grip {
+	cursor: default;
 }
 .bottom-panel.collapsed .bottom-toggle {
 	transform: rotate(180deg);
