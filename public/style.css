@@ -73,6 +73,29 @@ body {
 	border-left: 3px solid transparent;
 	transition: all 0.1s;
 }
+.exercise-item.completed {
+	border-left-color: #3fb950;
+	background: #0d2817;
+}
+.exercise-item.completed .title {
+	color: #7ee787;
+}
+.progress-badge {
+	float: right;
+	font-size: 10px;
+	padding: 1px 6px;
+	border-radius: 8px;
+	margin-top: 2px;
+	font-weight: 500;
+}
+.completed-badge {
+	background: #1f6f31;
+	color: #7ee787;
+}
+.attempted-badge {
+	background: #21262d;
+	color: #8b949e;
+}
 .exercise-item:hover {
 	background: #21262d;
 }

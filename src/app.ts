@@ -30,6 +30,75 @@ let activeDbId = "unilever";
 let allExerciseDefs: any[] = [];
 let _bottomResizeTimer: any = null;
 let _mermaidLoading = false;
+// ─── Exercise Progress (localStorage) ──────────────────────────────────────
+interface ProgressRecord {
+	passCount: number;
+	attemptCount: number;
+	lastPassed: string | null;
+}
+
+function loadProgress(): Record<string, ProgressRecord> {
+	try {
+		return JSON.parse(localStorage.getItem("sqljudge_progress") || "{}");
+	} catch {
+		return {};
+	}
+}
+
+function saveProgress(progress: Record<string, ProgressRecord>): void {
+	try {
+		localStorage.setItem("sqljudge_progress", JSON.stringify(progress));
+	} catch {
+		/* localStorage full or unavailable */
+	}
+}
+
+function recordAttempt(exId: string, passed: boolean): void {
+	const progress = loadProgress();
+	const rec = progress[exId] || {
+		passCount: 0,
+		attemptCount: 0,
+		lastPassed: null,
+	};
+	rec.attemptCount++;
+	if (passed) {
+		rec.passCount++;
+		rec.lastPassed = new Date().toISOString();
+	}
+	progress[exId] = rec;
+	saveProgress(progress);
+	updateExerciseListProgress();
+}
+
+function updateExerciseListProgress(): void {
+	const progress = loadProgress();
+	document.querySelectorAll(".exercise-item").forEach((el) => {
+		const id = (el as HTMLElement).dataset.id;
+		if (!id) return;
+		const rec = progress[id];
+		const badge = el.querySelector(".progress-badge");
+		if (rec && rec.passCount > 0) {
+			el.classList.add("completed");
+			if (badge)
+				badge.textContent =
+					"✅ " + rec.passCount + "/" + rec.attemptCount;
+		} else {
+			el.classList.remove("completed");
+			if (badge) badge.textContent = "🔄 " + rec.attemptCount;
+		}
+	});
+}
+
+function resetProgress(): void {
+	if (!confirm("Reset all exercise progress?")) return;
+	try {
+		localStorage.removeItem("sqljudge_progress");
+	} catch {
+		/* ignore */
+	}
+	loadExercises();
+}
+
 let _descriptions: Record<
 	string,
 	{ description: string; columns: Record<string, string> }
@@ -231,13 +300,22 @@ function loadExercises() {
 		title: e.title,
 		difficulty: e.difficulty,
 	}));
+	const progress = loadProgress();
 	document.getElementById("exerciseList").innerHTML = exercises
 		.map(
-			(e: any) =>
-				`<div class="exercise-item" data-id="${e.id}" onclick="selectExercise('${e.id}')">
+			(e: any) => {
+				const rec = progress[e.id];
+				const badgeHtml = rec
+					? rec.passCount > 0
+						? `<span class="progress-badge completed-badge">✅ ${rec.passCount}/${rec.attemptCount}</span>`
+						: `<span class="progress-badge attempted-badge">🔄 ${rec.attemptCount}</span>`
+					: "";
+				return `<div class="exercise-item${rec && rec.passCount > 0 ? " completed" : ""}" data-id="${e.id}" onclick="selectExercise('${e.id}')">
       <div class="title">${e.title}</div>
       <div class="meta"><span class="diff-badge diff-${e.difficulty}">${e.difficulty}</span>${e.id}</div>
-    </div>`,
+      ${badgeHtml}
+    </div>`;
+			},
 		)
 		.join("");
 }
@@ -836,6 +914,7 @@ function runJudge() {
 			solution: ex.solution,
 			hint: ex.hint || null,
 		});
+		recordAttempt(currentId!, result.pass);
 		btn.disabled = false;
 		status.textContent = "";
 	}, 50);
