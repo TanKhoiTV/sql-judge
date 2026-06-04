@@ -59,28 +59,40 @@ describe("normalizeValue", () => {
 
 describe("compareResults", () => {
 	it("passes on identical results", () => {
-		const user = makeResult(["id", "name"], [
-			{ id: 1, name: "Alice" },
-			{ id: 2, name: "Bob" },
-		]);
-		const ref = makeResult(["id", "name"], [
-			{ id: 1, name: "Alice" },
-			{ id: 2, name: "Bob" },
-		]);
+		const user = makeResult(
+			["id", "name"],
+			[
+				{ id: 1, name: "Alice" },
+				{ id: 2, name: "Bob" },
+			],
+		);
+		const ref = makeResult(
+			["id", "name"],
+			[
+				{ id: 1, name: "Alice" },
+				{ id: 2, name: "Bob" },
+			],
+		);
 		const r = compareResults(user, ref);
 		expect(r.pass).toBe(true);
 		expect(r.issues).toHaveLength(0);
 	});
 
 	it("passes on results in different order (set equality)", () => {
-		const user = makeResult(["id", "name"], [
-			{ id: 2, name: "Bob" },
-			{ id: 1, name: "Alice" },
-		]);
-		const ref = makeResult(["id", "name"], [
-			{ id: 1, name: "Alice" },
-			{ id: 2, name: "Bob" },
-		]);
+		const user = makeResult(
+			["id", "name"],
+			[
+				{ id: 2, name: "Bob" },
+				{ id: 1, name: "Alice" },
+			],
+		);
+		const ref = makeResult(
+			["id", "name"],
+			[
+				{ id: 1, name: "Alice" },
+				{ id: 2, name: "Bob" },
+			],
+		);
 		const r = compareResults(user, ref);
 		expect(r.pass).toBe(true);
 	});
@@ -110,24 +122,19 @@ describe("compareResults", () => {
 	});
 
 	it("catches column name mismatch", () => {
-		const user = makeResult(["ID", "NAME"], [
-			{ ID: 1, NAME: "Alice" },
-		]);
-		const ref = makeResult(["id", "full_name"], [
-			{ id: 1, full_name: "Alice" },
-		]);
+		const user = makeResult(["ID", "NAME"], [{ ID: 1, NAME: "Alice" }]);
+		const ref = makeResult(
+			["id", "full_name"],
+			[{ id: 1, full_name: "Alice" }],
+		);
 		const r = compareResults(user, ref);
 		expect(r.pass).toBe(false);
 		expect(r.issues.some((i) => i.includes("Column 2"))).toBe(true);
 	});
 
 	it("matches columns case-insensitively", () => {
-		const user = makeResult(["ID", "NAME"], [
-			{ ID: 1, NAME: "Alice" },
-		]);
-		const ref = makeResult(["id", "name"], [
-			{ id: 1, name: "Alice" },
-		]);
+		const user = makeResult(["ID", "NAME"], [{ ID: 1, NAME: "Alice" }]);
+		const ref = makeResult(["id", "name"], [{ id: 1, name: "Alice" }]);
 		const r = compareResults(user, ref);
 		expect(r.pass).toBe(true);
 	});
@@ -164,23 +171,15 @@ describe("compareResults", () => {
 	});
 
 	it("handles NULL values in cells", () => {
-		const user = makeResult(["id", "name"], [
-			{ id: 1, name: null },
-		]);
-		const ref = makeResult(["id", "name"], [
-			{ id: 1, name: null as unknown },
-		]);
+		const user = makeResult(["id", "name"], [{ id: 1, name: null }]);
+		const ref = makeResult(["id", "name"], [{ id: 1, name: null as unknown }]);
 		const r = compareResults(user, ref);
 		expect(r.pass).toBe(true);
 	});
 
 	it("treats null and empty string as different", () => {
-		const user = makeResult(["id", "name"], [
-			{ id: 1, name: "" },
-		]);
-		const ref = makeResult(["id", "name"], [
-			{ id: 1, name: null },
-		]);
+		const user = makeResult(["id", "name"], [{ id: 1, name: "" }]);
+		const ref = makeResult(["id", "name"], [{ id: 1, name: null }]);
 		const r = compareResults(user, ref);
 		// Both normalize to "" so they compare equal — this is current behavior
 		expect(r.pass).toBe(true);
@@ -201,9 +200,10 @@ describe("compareResults", () => {
 	});
 
 	it("reports column count mismatch when user has extra columns", () => {
-		const user = makeResult(["id", "name", "extra"], [
-			{ id: 1, name: "Alice", extra: "x" },
-		]);
+		const user = makeResult(
+			["id", "name", "extra"],
+			[{ id: 1, name: "Alice", extra: "x" }],
+		);
 		const ref = makeResult(["id", "name"], [{ id: 1, name: "Alice" }]);
 		const r = compareResults(user, ref);
 		// Column count mismatch is reported as an issue
@@ -212,13 +212,17 @@ describe("compareResults", () => {
 	});
 
 	it("compares overlapping columns when user has extra, row data still matches", () => {
-		const user = makeResult(["id", "name", "extra"], [
-			{ id: 1, name: "Alice", extra: "x" },
-		]);
+		const user = makeResult(
+			["id", "name", "extra"],
+			[{ id: 1, name: "Alice", extra: "x" }],
+		);
 		const ref = makeResult(["id", "name"], [{ id: 1, name: "Alice" }]);
 		const r = compareResults(user, ref);
 		// No row-level issues, only column count
-		expect(r.issues.filter((i) => i.includes("missing") || i.includes("extra row")).length).toBe(0);
+		expect(
+			r.issues.filter((i) => i.includes("missing") || i.includes("extra row"))
+				.length,
+		).toBe(0);
 	});
 
 	it("reports column count mismatch when ref has more", () => {
@@ -231,10 +235,13 @@ describe("compareResults", () => {
 
 	it("reports multiple issues at once", () => {
 		const user = makeResult(["x"], [{ x: 1 }, { x: 99 }]);
-		const ref = makeResult(["id", "name"], [
-			{ id: 1, name: "Alice" },
-			{ id: 2, name: "Bob" },
-		]);
+		const ref = makeResult(
+			["id", "name"],
+			[
+				{ id: 1, name: "Alice" },
+				{ id: 2, name: "Bob" },
+			],
+		);
 		const r = compareResults(user, ref);
 		expect(r.pass).toBe(false);
 		// Should have column count, column name, row count, and data issues

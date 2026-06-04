@@ -70,9 +70,7 @@ export function compareResults(
 	}
 
 	if (user.rowCount !== ref.rowCount) {
-		issues.push(
-			"Expected " + ref.rowCount + " row(s), got " + user.rowCount,
-		);
+		issues.push("Expected " + ref.rowCount + " row(s), got " + user.rowCount);
 	}
 
 	const colCount = Math.min(user.cols!.length, ref.cols!.length);
