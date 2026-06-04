@@ -10,7 +10,8 @@ body {
 	font-family: -apple-system, system-ui, sans-serif;
 	background: #0d1117;
 	color: #e6edf3;
-	min-height: 100vh;
+	height: 100vh;
+	overflow: hidden;
 	display: flex;
 }
 ::-webkit-scrollbar {
@@ -32,6 +33,8 @@ body {
 	border-right: 1px solid #30363d;
 	display: flex;
 	flex-direction: column;
+	height: 100vh;
+	overflow: hidden;
 }
 .sidebar-tabs {
 	display: flex;

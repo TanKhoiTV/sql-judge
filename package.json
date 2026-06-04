@@ -1,6 +1,6 @@
 {
   "name": "sql-judge",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "description": "Client-side SQL practice judge — practice SQL in your browser or CLI with instant feedback against reference solutions",
   "license": "MIT",
   "type": "module",

@@ -23,6 +23,7 @@ let exercises: { id: string; title: string; difficulty: string }[] = [];
 let currentId: string | null = null;
 let currentFilter = "all";
 let currentSort = "default";
+let currentSortDir: "asc" | "desc" = "asc";
 let currentMode: "practice" | "sandbox" = "practice";
 let schemaData: Record<string, any> | null = null;
 let cmEditor: any = null;
@@ -229,15 +230,24 @@ function setFilter(filter: string): void {
 }
 
 function setSort(sort: string): void {
-	currentSort = sort;
+	if (sort === "default") {
+		currentSort = "default";
+		currentSortDir = "asc";
+	} else if (sort === currentSort) {
+		currentSortDir = currentSortDir === "asc" ? "desc" : "asc";
+	} else {
+		currentSort = sort;
+		currentSortDir = "asc";
+	}
 	renderExercises();
 }
 
 function renderExercises() {
 	const list = document.getElementById("exerciseList");
 	if (!list) return;
-	// Save scroll position
-	const savedScroll = list.scrollTop;
+	// Save scroll position on the scrollable sidebar panel
+	const panel = document.getElementById("panel-exercises");
+	const savedScroll = panel ? panel.scrollTop : 0;
 
 	// Custom database: no exercises, no controls
 	if (activeDbId !== "unilever") {
@@ -263,17 +273,20 @@ function renderExercises() {
 
 	// Sort (stable — tied items keep original order)
 	const sorted = [...filtered].sort((a, b) => {
+		const dir =
+			currentSort === "default" ? 1 : currentSortDir === "asc" ? 1 : -1;
 		if (currentSort === "difficulty") {
 			const order: Record<string, number> = {
 				Easy: 1,
 				Medium: 2,
 				Hard: 3,
 			};
-			return (order[a.difficulty] || 0) - (order[b.difficulty] || 0);
+			return dir * ((order[a.difficulty] || 0) - (order[b.difficulty] || 0));
 		}
 		if (currentSort === "progress") {
 			return (
-				getProgressWeight(progress[a.id]) - getProgressWeight(progress[b.id])
+				dir *
+				(getProgressWeight(progress[a.id]) - getProgressWeight(progress[b.id]))
 			);
 		}
 		return 0; // "default" — keep original order
@@ -289,8 +302,8 @@ function renderExercises() {
   <div class="exercise-sort-bar">
     <span class="sort-label">Sort:</span>
     <div class="sort-btn${currentSort === "default" ? " active" : ""}" onclick="setSort('default')">Default</div>
-    <div class="sort-btn${currentSort === "difficulty" ? " active" : ""}" onclick="setSort('difficulty')">Difficulty</div>
-    <div class="sort-btn${currentSort === "progress" ? " active" : ""}" onclick="setSort('progress')">Progress</div>
+    <div class="sort-btn${currentSort === "difficulty" ? " active" : ""}" onclick="setSort('difficulty')">Difficulty${currentSort === "difficulty" ? (currentSortDir === "asc" ? " ↑" : " ↓") : ""}</div>
+    <div class="sort-btn${currentSort === "progress" ? " active" : ""}" onclick="setSort('progress')">Progress${currentSort === "progress" ? (currentSortDir === "asc" ? " ↑" : " ↓") : ""}</div>
   </div>`;
 
 	if (sorted.length === 0) {
@@ -311,8 +324,8 @@ function renderExercises() {
 	}
 
 	list.innerHTML = html;
-	// Restore scroll position
-	list.scrollTop = savedScroll;
+	// Restore scroll position on the scrollable sidebar panel
+	if (panel) panel.scrollTop = savedScroll;
 }
 
 function selectExercise(id: string): void {
@@ -731,7 +744,11 @@ function addBottomResize(): void {
 			if (!isDragging) return;
 			const delta = startY - ev.clientY;
 			let h = startHeight + delta;
-			const maxH = window.innerHeight * 0.5;
+			const topbar = document.querySelector(".topbar") as HTMLElement | null;
+			const topbarHeight = topbar ? topbar.offsetHeight : 60;
+			const available = window.innerHeight - topbarHeight;
+			const MIN_CONTENT = 120;
+			const maxH = Math.max(32, available - MIN_CONTENT);
 			h = Math.max(32, Math.min(maxH, h));
 			panel.style.height = h + "px";
 		};
@@ -1057,6 +1074,7 @@ function loadSqlFromText() {
 			activeDbId = "custom";
 			currentFilter = "all";
 			currentSort = "default";
+			currentSortDir = "asc";
 
 			closeLoadSqlModal();
 			schemaData = null;
@@ -1096,6 +1114,7 @@ async function resetDatabase() {
 	activeDbId = "unilever";
 	currentFilter = "all";
 	currentSort = "default";
+	currentSortDir = "asc";
 
 	schemaData = null;
 	cmEditor = null;
