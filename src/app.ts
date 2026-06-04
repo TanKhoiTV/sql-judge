@@ -381,15 +381,16 @@ function createEditor(containerId: string, initialValue: string): any {
 		},
 	});
 
-	let resizeTimer: any = null;
-	editor.on("change", () => {
-		clearTimeout(resizeTimer);
-		resizeTimer = setTimeout(() => {
-			editor.setSize(
-				null,
-				Math.max(120, editor.getScrollInfo().height + 10),
-			);
-		}, 150);
+	// Only resize the editor when the number of lines actually changes
+	// (newlines, pasted multi-line text, or line merges from delete/backspace)
+	editor.on("change", (cm, change) => {
+		const oldLines = change.removed
+			? change.removed.split("\n").length
+			: 1;
+		const newLines = change.text.length;
+		if (oldLines !== newLines) {
+			cm.setSize(null, Math.max(120, cm.getScrollInfo().height + 10));
+		}
 	});
 
 	editor.on("inputRead", (cm, change) => {
@@ -409,6 +410,9 @@ function getEditorValue(editor: any): string {
 
 function setEditorValue(editor: any, val: string): void {
 	editor.setValue(val || "");
+	// The change handler resizes on line-count changes, but we also resize
+	// here to handle the case where content stays single-line (e.g. clear all)
+	// and the editor needs to shrink back to minimum height.
 	editor.setSize(null, Math.max(120, editor.getScrollInfo().height + 10));
 	editor.focus();
 }
