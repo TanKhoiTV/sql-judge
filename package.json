@@ -10,7 +10,7 @@
     "build:js": "esbuild src/app.ts --outfile=public/app.js --platform=browser --target=es2020 --minify",
     "build:css": "esbuild public/style.css --outfile=public/style.min.css --minify 2>&1",
     "build:gz": "npx tsx scripts/gzip_assets.ts",
-    "build": "npm run build:db && npm run build:er && npm run build:schema && npm run build:js && npm run build:css && npm run build:gz",
+    "build": "cp VERSION public/VERSION && npm run build:db && npm run build:er && npm run build:schema && npm run build:js && npm run build:css && npm run build:gz",
     "start": "npm run build && npx http-server public -p 3000 -c-1 --cors -g",
     "dev": "npx http-server public -p 3000 -c-1 --cors -g",
     "test": "npx tsx judge.ts",
