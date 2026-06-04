@@ -30,6 +30,10 @@ let activeDbId = "unilever";
 let allExerciseDefs: any[] = [];
 let _bottomResizeTimer: any = null;
 let _mermaidLoading = false;
+let _descriptions: Record<
+	string,
+	{ description: string; columns: Record<string, string> }
+> | null = null;
 
 // ─── SQL.js helpers ────────────────────────────────────────────────────────
 function runQuery(sql: string): any {
@@ -413,6 +417,36 @@ function renderTableCards() {
 //   - Preset DB (Unilever) → static pre-rendered SVG (zero JS cost)
 //   - Custom DB            → lazy-load mermaid.js on demand
 
+// ─── Render Description tab ───────────────────────────────────────────────
+function renderDescription(): void {
+	const container = document.getElementById("bv-desc");
+	if (!container || !_descriptions) return;
+	let html = '<div style="padding:12px">';
+	for (const [name, info] of Object.entries(_descriptions)) {
+		html += `<details style="margin-bottom:8px;background:#161b22;border:1px solid #30363d;border-radius:6px;padding:8px 12px"${name === "NHOM_HANG" ? " open" : ""}>
+      <summary style="cursor:pointer;font-weight:600;color:#e6edf3;font-size:13px">${escHtml(name)}</summary>
+      <p style="margin:8px 0 4px;font-size:12px;color:#8b949e;line-height:1.5">${escHtml(info.description)}</p>
+      <table style="width:100%;border-collapse:collapse;margin-top:6px;font-size:11px">
+        <thead><tr style="background:#0d1117"><th style="padding:3px 6px;text-align:left;color:#8b949e">Column</th><th style="padding:3px 6px;text-align:left;color:#8b949e">Description</th></tr></thead>
+        <tbody>`;
+		for (const [col, desc] of Object.entries(info.columns)) {
+			const isPk =
+				schemaData &&
+				schemaData[name]?.columns?.some((c: any) => c.name === col && c.pk);
+			const isFk =
+				schemaData &&
+				schemaData[name]?.foreignKeys?.some((f: any) => f.from === col);
+			let colDisplay = escHtml(col);
+			if (isPk) colDisplay = "🔑 " + colDisplay;
+			if (isFk) colDisplay = "↳ " + colDisplay;
+			html += `<tr style="border-top:1px solid #21262d"><td style="padding:3px 6px;color:#79c0ff;font-family:monospace">${colDisplay}</td><td style="padding:3px 6px;color:#c9d1d9">${escHtml(desc)}</td></tr>`;
+		}
+		html += "</tbody></table></details>";
+	}
+	html += "</div>";
+	container.innerHTML = html;
+}
+
 function renderERDiagram() {
 	if (!schemaData) {
 		const container = document.getElementById("mermaidContainer");
@@ -539,6 +573,9 @@ function showBottomView(view: string): void {
 		// checks may have missed init render; safe to re-call
 		const container = document.getElementById("bv-checks");
 		if (container && !container.innerHTML) renderChecks();
+	}
+	if (view === "desc" && _descriptions) {
+		renderDescription();
 	}
 }
 
@@ -1061,13 +1098,22 @@ async function init() {
 				/* exercises fetch is best-effort */
 			}
 		})(),
+		(async () => {
+			try {
+				const dRes = await fetch(
+					"db/Unilever_Product_Management.descriptions.json",
+				);
+				_descriptions = await dRes.json();
+			} catch {
+				/* descriptions fetch is best-effort */
+			}
+		})(),
 	]);
 
 	// Initialize sql.js (loads WASM from CDN)
 	try {
 		SQL = await initSqlJs({
-			locateFile: (file) =>
-				"https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.11.0/" + file,
+			locateFile: (file) => "vendor/" + file,
 		});
 	} catch (e) {
 		document.getElementById("mainContent").innerHTML =

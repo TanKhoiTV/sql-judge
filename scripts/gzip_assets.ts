@@ -1,4 +1,9 @@
-import { readdirSync, statSync, createReadStream, createWriteStream } from "node:fs";
+import {
+	readdirSync,
+	statSync,
+	createReadStream,
+	createWriteStream,
+} from "node:fs";
 import { createGzip } from "node:zlib";
 import { join, extname } from "node:path";
 import { pipeline } from "node:stream/promises";
@@ -13,7 +18,11 @@ function walk(dir: string): void {
 		const st = statSync(p);
 		if (st.isDirectory()) {
 			walk(p);
-		} else if (st.isFile() && EXTS.has(extname(name)) && !name.endsWith(".gz")) {
+		} else if (
+			st.isFile() &&
+			EXTS.has(extname(name)) &&
+			!name.endsWith(".gz")
+		) {
 			const gzPath = p + ".gz";
 			promises.push(
 				pipeline(

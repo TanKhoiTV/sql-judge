@@ -1,122 +1,162 @@
 -- ============================================================================
 -- SQLite Version: Unilever Product Management Database
--- Matches:       sample.sql (reference file) with SQLite-compatible types
 -- All integrity constraints per specification (section 1.1-1.11)
 -- ============================================================================
 
--- 1.1 NHOM_HANG
--- Spec: mỗi nhóm có một mã nhóm để phân biệt
+/*
+ * NHOM_HANG (Product Group)
+ * Các hàng hóa được phân loại thành các nhóm hàng, mỗi nhóm có một mã nhóm để
+ * phân biệt với các nhóm hàng khác. Công ty quản lý 4 nhóm hàng: bột, chăm sóc
+ * thân thể, chăm sóc sắc đẹp và thực phẩm.
+ */
 CREATE TABLE IF NOT EXISTS NHOM_HANG (
-    MANHOM  TEXT PRIMARY KEY,
-    TENNHOM TEXT NOT NULL
+    MANHOM  TEXT PRIMARY KEY,   /* Mã nhóm hàng, phân biệt các nhóm */
+    TENNHOM TEXT NOT NULL       /* Tên nhóm hàng */
 );
 
--- 1.6 LOAI_NV
--- Spec: các vai trò khác nhau được phân biệt bởi mã loại nhân viên
+/*
+ * LOAI_NV (Employee Role)
+ * Mỗi đội có một trưởng đội, một nhân viên giao hàng và các tiếp thị. Quan hệ
+ * LOAI_NV cho biết các vai trò khác nhau có thể có ở công ty và được phân biệt
+ * bởi mã loại nhân viên.
+ */
 CREATE TABLE IF NOT EXISTS LOAI_NV (
-    MALNV   TEXT PRIMARY KEY,
-    TENLOAI TEXT NOT NULL
+    MALNV   TEXT PRIMARY KEY,   /* Mã loại nhân viên, phân biệt vai trò */
+    TENLOAI TEXT NOT NULL       /* Tên loại nhân viên (Trưởng đội, Giao hàng, Tiếp thị) */
 );
 
--- 1.3 HINH_THUC_DONG_GOI
--- Spec: tối đa 4 cấp tính cho một loại hàng hóa, mỗi hàng hóa có một mã đóng gói
+/*
+ * HINH_THUC_DONG_GOI (Packaging Format)
+ * Một loại hàng bất kỳ có thể có nhiều quy cách đóng gói, tối đa 4 cấp tính
+ * cho một loại hàng hóa. Mỗi hàng hóa có một mã đóng gói cho biết cách thức
+ * đóng gói theo thùng và theo lốc.
+ */
 CREATE TABLE IF NOT EXISTS HINH_THUC_DONG_GOI (
-    MAHTDG TEXT PRIMARY KEY,
-    THUNG  INTEGER NOT NULL CHECK(THUNG > 0),
-    LOC    INTEGER CHECK(LOC >= 0)
+    MAHTDG TEXT PRIMARY KEY,    /* Mã đóng gói */
+    THUNG  INTEGER NOT NULL CHECK(THUNG > 0),    /* Số lượng/thùng */
+    LOC    INTEGER CHECK(LOC >= 0)                /* Số lượng/lốc (0 hoặc NULL nếu không có lốc) */
 );
 
--- 1.7 DAI_LY
--- Spec: mỗi đại lý có một mã duy nhất, một mã số thuế
+/*
+ * DAI_LY (Agent/Distributor)
+ * Khách hàng của công ty là các đại lý được phân phối theo các vùng khác nhau
+ * do Unilever chỉ định. Mỗi đại lý có một mã duy nhất, tên, mã số thuế, địa
+ * chỉ và điện thoại chính để liên lạc.
+ */
 CREATE TABLE IF NOT EXISTS DAI_LY (
-    MADL      TEXT PRIMARY KEY,
-    TENDL     TEXT NOT NULL,
-    MASOTHUE  TEXT NOT NULL UNIQUE,
-    DIACHI    TEXT,
-    DIENTHOAI TEXT
+    MADL      TEXT PRIMARY KEY,  /* Mã đại lý duy nhất, phân biệt với đại lý khác */
+    TENDL     TEXT NOT NULL,     /* Tên đại lý */
+    MASOTHUE  TEXT NOT NULL UNIQUE,   /* Mã số thuế */
+    DIACHI    TEXT,              /* Địa chỉ */
+    DIENTHOAI TEXT               /* Điện thoại chính để liên lạc */
 );
 
--- 1.4 DOI
--- Spec: công ty có 10 đội, mỗi đội phụ trách một nhóm hàng
+/*
+ * DOI (Team)
+ * Công ty có 10 đội phụ trách từng nhóm hàng khác nhau. Mỗi đội có một mã đội
+ * để phân biệt và phụ trách một nhóm hàng. Một nhóm hàng có thể có nhiều đội
+ * phụ trách.
+ */
 CREATE TABLE IF NOT EXISTS DOI (
-    MADOI  TEXT PRIMARY KEY,
-    MANHOM TEXT NOT NULL,
+    MADOI  TEXT PRIMARY KEY,    /* Mã đội, phân biệt các đội */
+    MANHOM TEXT NOT NULL,       /* Nhóm hàng mà đội phụ trách */
     FOREIGN KEY (MANHOM) REFERENCES NHOM_HANG(MANHOM)
 );
 
--- 1.2 HANG_HOA
--- Spec: mỗi hàng hóa được đánh mã, có tên, đơn vị tính, đơn giá, số lượng tồn,
---        được xếp vào một nhóm hàng, và có một mã đóng gói
+/*
+ * HANG_HOA (Product/Goods)
+ * Mỗi hàng hóa được đánh một mã để phân biệt với tất cả các hàng hóa khác.
+ * Có tên hàng hóa (thường gọi tên sản phẩm + trọng lượng), được xếp vào một
+ * nhóm hàng, có đơn vị tính, đơn giá bán quy định và số lượng tồn kho.
+ */
 CREATE TABLE IF NOT EXISTS HANG_HOA (
-    MAHH   TEXT PRIMARY KEY,
-    MAHTDG TEXT NOT NULL,
-    MANHOM TEXT NOT NULL,
-    TENHH  TEXT NOT NULL,
-    DVT    TEXT NOT NULL,
-    DONGIA REAL    NOT NULL CHECK(DONGIA > 0),
-    SLTON  INTEGER NOT NULL CHECK(SLTON >= 0),
+    MAHH   TEXT PRIMARY KEY,    /* Mã hàng hóa, phân biệt tất cả hàng hóa */
+    MAHTDG TEXT NOT NULL,       /* Mã đóng gói: quy cách đóng thùng/lốc */
+    MANHOM TEXT NOT NULL,       /* Nhóm hàng (BOT, CSSD, CSTT, TP) */
+    TENHH  TEXT NOT NULL,       /* Tên hàng hóa (sản phẩm + trọng lượng) */
+    DVT    TEXT NOT NULL,       /* Đơn vị tính */
+    DONGIA REAL    NOT NULL CHECK(DONGIA > 0),   /* Đơn giá bán quy định */
+    SLTON  INTEGER NOT NULL CHECK(SLTON >= 0),   /* Số lượng tồn kho tối thiểu */
     FOREIGN KEY (MAHTDG) REFERENCES HINH_THUC_DONG_GOI(MAHTDG),
     FOREIGN KEY (MANHOM) REFERENCES NHOM_HANG(MANHOM)
 );
 
--- 1.5 NHAN_VIEN
--- Spec: mỗi nhân viên có mã, thuộc một loại NV, thuộc một đội, có họ tên, giới tính,
---        năm sinh, địa chỉ, điện thoại, ngày vào làm
+/*
+ * NHAN_VIEN (Employee)
+ * Thông tin nhân viên thực hiện phân phối sản phẩm. Mỗi nhân viên có mã phân
+ * biệt, thuộc một loại nhân viên và một đội. Nhiệm vụ: tiếp thị sản phẩm, nhận
+ * đặt hàng, theo dõi giao hàng và thu tiền khách hàng.
+ */
 CREATE TABLE IF NOT EXISTS NHAN_VIEN (
-    MANV       TEXT PRIMARY KEY,
-    MALNV      TEXT NOT NULL,
-    MADOI      TEXT NOT NULL,
-    HOTEN      TEXT NOT NULL,
-    GIOITINH   TEXT NOT NULL CHECK(GIOITINH IN ('Nam', 'Nữ')),
-    NAMSINH    TEXT,
-    DIACHI     TEXT,
-    DIENTHOAI  TEXT,
-    NGAYVAOLAM TEXT NOT NULL,
-    GHICHU     TEXT,
+    MANV       TEXT PRIMARY KEY,    /* Mã nhân viên, phân biệt tất cả NV */
+    MALNV      TEXT NOT NULL,       /* Loại nhân viên (TD, GH, TT) */
+    MADOI      TEXT NOT NULL,       /* Mã đội, thuộc về đội nào */
+    HOTEN      TEXT NOT NULL,       /* Họ tên nhân viên */
+    GIOITINH   TEXT NOT NULL CHECK(GIOITINH IN ('Nam', 'Nữ')), /* Giới tính */
+    NAMSINH    TEXT,                /* Năm sinh */
+    DIACHI     TEXT,                /* Địa chỉ */
+    DIENTHOAI  TEXT,                /* Điện thoại */
+    NGAYVAOLAM TEXT NOT NULL,       /* Ngày bắt đầu làm việc */
+    GHICHU     TEXT,                /* Ghi chú (bằng cấp, chứng chỉ, ...) */
     FOREIGN KEY (MALNV) REFERENCES LOAI_NV(MALNV),
     FOREIGN KEY (MADOI) REFERENCES DOI(MADOI)
 );
 
--- 1.8 PHIEU_XUAT
--- Spec: thủ kho lập phiếu xuất kho, lập cho một nhân viên vào một ngày xuất
+/*
+ * PHIEU_XUAT (Warehouse Export Note)
+ * Khi có nhu cầu, các đội yêu cầu kho xuất hàng. Thủ kho lập phiếu xuất kho
+ * với một mã phân biệt, lập cho một nhân viên vào một ngày xuất.
+ */
 CREATE TABLE IF NOT EXISTS PHIEU_XUAT (
-    MAPX     TEXT PRIMARY KEY,
-    MANV     TEXT NOT NULL,
-    NGAYXUAT TEXT NOT NULL,
+    MAPX     TEXT PRIMARY KEY,      /* Mã phiếu xuất, phân biệt các phiếu */
+    MANV     TEXT NOT NULL,         /* Nhân viên được xuất hàng */
+    NGAYXUAT TEXT NOT NULL,         /* Ngày xuất kho */
     FOREIGN KEY (MANV) REFERENCES NHAN_VIEN(MANV)
 );
 
--- 1.9 CTPX
--- Spec: ứng với mỗi phiếu có thể có nhiều mặt hàng với số lượng cụ thể
+/*
+ * CTPX (Export Note Detail)
+ * Ứng với mỗi phiếu xuất có thể có nhiều mặt hàng với số lượng cụ thể.
+ * Hàng hóa khi giao cho mỗi đội được tính trên đơn vị tính lớn nhất của hàng
+ * hóa đó và có thể xuất kho theo quy cách đóng gói khác nhau.
+ */
 CREATE TABLE IF NOT EXISTS CTPX (
-    MAPX    TEXT    NOT NULL,
-    MAHH    TEXT    NOT NULL,
-    SOLUONG INTEGER NOT NULL CHECK(SOLUONG > 0),
+    MAPX    TEXT    NOT NULL,        /* Mã phiếu xuất */
+    MAHH    TEXT    NOT NULL,        /* Mã mặt hàng */
+    SOLUONG INTEGER NOT NULL CHECK(SOLUONG > 0),   /* Số lượng cụ thể */
     PRIMARY KEY (MAPX, MAHH),
     FOREIGN KEY (MAPX) REFERENCES PHIEU_XUAT(MAPX),
     FOREIGN KEY (MAHH) REFERENCES HANG_HOA(MAHH)
 );
 
--- 1.10 HOA_DON
--- Spec: nhân viên cấp hóa đơn cho khách hàng vào một ngày lập, ghi tổng tiền
+/*
+ * HOA_DON (Invoice)
+ * Khách hàng có thể mua hàng từ nhiều đội khác nhau. Khi nhận tiền, nhân viên
+ * tiếp thị cấp một hóa đơn phân biệt với tất cả hóa đơn khác vào một ngày lập,
+ * có ghi tổng tiền trị giá của hóa đơn.
+ */
 CREATE TABLE IF NOT EXISTS HOA_DON (
-    MAHD     TEXT PRIMARY KEY,
-    MANV     TEXT  NOT NULL,
-    MADL     TEXT  NOT NULL,
-    NGAYLAP  TEXT  NOT NULL,
-    TONGTIEN REAL  NOT NULL CHECK(TONGTIEN >= 0),
+    MAHD     TEXT PRIMARY KEY,      /* Mã hóa đơn, phân biệt các hóa đơn */
+    MANV     TEXT  NOT NULL,        /* Nhân viên tiếp thị cấp hóa đơn */
+    MADL     TEXT  NOT NULL,        /* Khách hàng (đại lý) */
+    NGAYLAP  TEXT  NOT NULL,        /* Ngày lập hóa đơn */
+    TONGTIEN REAL  NOT NULL CHECK(TONGTIEN >= 0),   /* Tổng tiền trị giá hóa đơn */
     FOREIGN KEY (MANV) REFERENCES NHAN_VIEN(MANV),
     FOREIGN KEY (MADL) REFERENCES DAI_LY(MADL)
 );
 
--- 1.11 CTHD
--- Spec: mỗi hóa đơn có thể có nhiều hàng, ghi số lượng bán, chiết khấu và thành tiền
+/*
+ * CTHD (Invoice Detail)
+ * Cho biết bán mặt hàng nào trong hóa đơn nào. Mỗi hóa đơn có thể có nhiều
+ * hàng. Mỗi hàng có ghi số lượng bán, chiết khấu cho đại lý và thành tiền
+ * (tính theo đơn giá * chiết khấu).
+ */
 CREATE TABLE IF NOT EXISTS CTHD (
-    MAHD      TEXT   NOT NULL,
-    MAHH      TEXT   NOT NULL,
-    SLBAN     INTEGER NOT NULL CHECK(SLBAN > 0),
-    CKBAN     REAL   NOT NULL CHECK(CKBAN >= 0 AND CKBAN <= 1),
-    THANHTIEN REAL   NOT NULL CHECK(THANHTIEN >= 0),
+    MAHD      TEXT   NOT NULL,      /* Mã hóa đơn */
+    MAHH      TEXT   NOT NULL,      /* Mặt hàng được bán */
+    SLBAN     INTEGER NOT NULL CHECK(SLBAN > 0),   /* Số lượng bán */
+    CKBAN     REAL   NOT NULL CHECK(CKBAN >= 0 AND CKBAN <= 1),  /* Chiết khấu đại lý (0.0-1.0) */
+    THANHTIEN REAL   NOT NULL CHECK(THANHTIEN >= 0),   /* Thành tiền = đơn giá * chiết khấu */
     PRIMARY KEY (MAHD, MAHH),
     FOREIGN KEY (MAHD) REFERENCES HOA_DON(MAHD),
     FOREIGN KEY (MAHH) REFERENCES HANG_HOA(MAHH)
