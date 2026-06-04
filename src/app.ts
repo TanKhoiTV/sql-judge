@@ -17,34 +17,6 @@ declare var mermaid: {
 };
 
 // ─── Globals ───────────────────────────────────────────────────────────────
-let db: any = null;
-let SQL: any = null;
-let exercises: { id: string; title: string; difficulty: string }[] = [];
-let currentId: string | null = null;
-let currentFilter = "all";
-let currentSort = "default";
-let currentSortDir: "asc" | "desc" = "asc";
-let currentMode: "practice" | "sandbox" = "practice";
-let schemaData: Record<string, any> | null = null;
-let cmEditor: any = null;
-let cmSandbox: any = null;
-// Expose module-level vars to window for onclick handlers in generated HTML.
-// With --bundle, esbuild wraps code in an IIFE, so bare identifiers like
-// cmEditor or selectExercise are not resolvable from event handler attributes.
-// Getters keep the window reference live even after reassignment.
-Object.defineProperty(window, "cmEditor", {
-	get: () => cmEditor,
-	configurable: true,
-});
-Object.defineProperty(window, "cmSandbox", {
-	get: () => cmSandbox,
-	configurable: true,
-});
-let activeDbName = "Unilever Product Management";
-let activeDbId = "unilever";
-let allExerciseDefs: any[] = [];
-let _bottomResizeTimer: any = null;
-let _mermaidLoading = false;
 // ─── Exercise Progress (localStorage) ──────────────────────────────────────
 interface ProgressRecord {
 	passCount: number;
@@ -107,15 +79,12 @@ function resetProgress(): void {
 	loadExercises();
 }
 
-let _descriptions: Record<
-	string,
-	{ description: string; columns: Record<string, string> }
-> | null = null;
+// _descriptions lives in state.ts
 
 // ─── SQL.js helpers ────────────────────────────────────────────────────────
 function runQuery(sql: string): any {
 	try {
-		const results = db.exec(sql);
+		const results = getState("db").exec(sql);
 		if (!results || results.length === 0)
 			return { ok: true, cols: [], rows: [], rowCount: 0 };
 		const cols = results[0].columns;
@@ -134,13 +103,13 @@ function runQuery(sql: string): any {
 
 function getSchema() {
 	const tables = {};
-	const tableRows = db.exec(
+	const tableRows = getState("db").exec(
 		"SELECT name FROM sqlite_master WHERE type='table' ORDER BY name",
 	);
 	if (!tableRows || tableRows.length === 0) return tables;
 	const tableNames = tableRows[0].values.map((v: any[]) => v[0]);
 	for (const t of tableNames) {
-		const colResult = db.exec("PRAGMA table_info('" + t + "')");
+		const colResult = getState("db").exec("PRAGMA table_info('" + t + "')");
 		const cols = colResult[0].values.map((v: any[]) => ({
 			name: v[1],
 			type: v[2],
@@ -148,7 +117,9 @@ function getSchema() {
 			notnull: !!v[3],
 			default: v[4],
 		}));
-		const fkResult = db.exec("PRAGMA foreign_key_list('" + t + "')");
+		const fkResult = getState("db").exec(
+			"PRAGMA foreign_key_list('" + t + "')",
+		);
 		const fks =
 			fkResult && fkResult.length
 				? fkResult[0].values.map((v: any[]) => ({
@@ -163,6 +134,8 @@ function getSchema() {
 }
 
 import { compareResults } from "./lib.ts";
+import { getState, setState } from "./state";
+import { expose, exposeState } from "./window";
 
 // ─── Sidebar tabs ─────────────────────────────────────────────────────────
 function showSidebar(panel: string): void {
@@ -206,8 +179,10 @@ function addSidebarResize(): void {
 			document.body.style.userSelect = "";
 			document.removeEventListener("mousemove", onMove);
 			document.removeEventListener("mouseup", onUp);
-			if (cmEditor) setTimeout(() => cmEditor.refresh(), 0);
-			if (cmSandbox) setTimeout(() => cmSandbox.refresh(), 0);
+			if (getState("cmEditor"))
+				setTimeout(() => getState("cmEditor").refresh(), 0);
+			if (getState("cmSandbox"))
+				setTimeout(() => getState("cmSandbox").refresh(), 0);
 		};
 
 		const onBlur = () => {
@@ -219,25 +194,28 @@ function addSidebarResize(): void {
 	});
 }
 
-// ─── Load exercises ────────────────────────────────────────────────────────
+// ─── Load exercises ────────────────────────────────────────────────────────────────────
 function loadExercises() {
 	renderExercises();
 }
 
 function setFilter(filter: string): void {
-	currentFilter = filter;
+	setState("currentFilter", filter);
 	renderExercises();
 }
 
 function setSort(sort: string): void {
 	if (sort === "default") {
-		currentSort = "default";
-		currentSortDir = "asc";
-	} else if (sort === currentSort) {
-		currentSortDir = currentSortDir === "asc" ? "desc" : "asc";
+		setState("currentSort", "default");
+		setState("currentSortDir", "asc");
+	} else if (sort === getState("currentSort")) {
+		setState(
+			"currentSortDir",
+			getState("currentSortDir") === "asc" ? "desc" : "asc",
+		);
 	} else {
-		currentSort = sort;
-		currentSortDir = "asc";
+		setState("currentSort", sort);
+		setState("currentSortDir", "asc");
 	}
 	renderExercises();
 }
@@ -250,14 +228,14 @@ function renderExercises() {
 	const savedScroll = panel ? panel.scrollTop : 0;
 
 	// Custom database: no exercises, no controls
-	if (activeDbId !== "unilever") {
-		exercises = [];
+	if (getState("activeDbId") !== "unilever") {
+		const exercises = [];
 		list.innerHTML =
 			'<div style="padding:20px;text-align:center;color:#8b949e;font-size:13px">📭 No exercises for this database.<br>Switch to <a href="#" onclick="switchMode(\'sandbox\');return false" style="color:#58a6ff">Sandbox mode</a> to run your own queries.</div>';
 		return;
 	}
 
-	exercises = allExerciseDefs.map((e: any) => ({
+	const exercises = getState("allExerciseDefs").map((e: any) => ({
 		id: e.id,
 		title: e.title,
 		difficulty: e.difficulty,
@@ -267,15 +245,21 @@ function renderExercises() {
 
 	// Filter
 	let filtered = exercises;
-	if (currentFilter !== "all") {
-		filtered = exercises.filter((e) => e.difficulty === currentFilter);
+	if (getState("currentFilter") !== "all") {
+		filtered = exercises.filter(
+			(e) => e.difficulty === getState("currentFilter"),
+		);
 	}
 
 	// Sort (stable — tied items keep original order)
 	const sorted = [...filtered].sort((a, b) => {
 		const dir =
-			currentSort === "default" ? 1 : currentSortDir === "asc" ? 1 : -1;
-		if (currentSort === "difficulty") {
+			getState("currentSort") === "default"
+				? 1
+				: getState("currentSortDir") === "asc"
+					? 1
+					: -1;
+		if (getState("currentSort") === "difficulty") {
 			const order: Record<string, number> = {
 				Easy: 1,
 				Medium: 2,
@@ -283,7 +267,7 @@ function renderExercises() {
 			};
 			return dir * ((order[a.difficulty] || 0) - (order[b.difficulty] || 0));
 		}
-		if (currentSort === "progress") {
+		if (getState("currentSort") === "progress") {
 			return (
 				dir *
 				(getProgressWeight(progress[a.id]) - getProgressWeight(progress[b.id]))
@@ -294,16 +278,16 @@ function renderExercises() {
 
 	// Build HTML
 	let html = `<div class="exercise-filter-bar">
-    <div class="filter-btn${currentFilter === "all" ? " active" : ""}" onclick="setFilter('all')">All</div>
-    <div class="filter-btn${currentFilter === "Easy" ? " active" : ""}" onclick="setFilter('Easy')">Easy</div>
-    <div class="filter-btn${currentFilter === "Medium" ? " active" : ""}" onclick="setFilter('Medium')">Medium</div>
-    <div class="filter-btn${currentFilter === "Hard" ? " active" : ""}" onclick="setFilter('Hard')">Hard</div>
+    <div class="filter-btn${getState("currentFilter") === "all" ? " active" : ""}" onclick="setFilter('all')">All</div>
+    <div class="filter-btn${getState("currentFilter") === "Easy" ? " active" : ""}" onclick="setFilter('Easy')">Easy</div>
+    <div class="filter-btn${getState("currentFilter") === "Medium" ? " active" : ""}" onclick="setFilter('Medium')">Medium</div>
+    <div class="filter-btn${getState("currentFilter") === "Hard" ? " active" : ""}" onclick="setFilter('Hard')">Hard</div>
   </div>
   <div class="exercise-sort-bar">
     <span class="sort-label">Sort:</span>
-    <div class="sort-btn${currentSort === "default" ? " active" : ""}" onclick="setSort('default')">Default</div>
-    <div class="sort-btn${currentSort === "difficulty" ? " active" : ""}" onclick="setSort('difficulty')">Difficulty${currentSort === "difficulty" ? (currentSortDir === "asc" ? " ↑" : " ↓") : ""}</div>
-    <div class="sort-btn${currentSort === "progress" ? " active" : ""}" onclick="setSort('progress')">Progress${currentSort === "progress" ? (currentSortDir === "asc" ? " ↑" : " ↓") : ""}</div>
+    <div class="sort-btn${getState("currentSort") === "default" ? " active" : ""}" onclick="setSort('default')">Default</div>
+    <div class="sort-btn${getState("currentSort") === "difficulty" ? " active" : ""}" onclick="setSort('difficulty')">Difficulty${getState("currentSort") === "difficulty" ? (getState("currentSortDir") === "asc" ? " ↑" : " ↓") : ""}</div>
+    <div class="sort-btn${getState("currentSort") === "progress" ? " active" : ""}" onclick="setSort('progress')">Progress${getState("currentSort") === "progress" ? (getState("currentSortDir") === "asc" ? " ↑" : " ↓") : ""}</div>
   </div>`;
 
 	if (sorted.length === 0) {
@@ -315,7 +299,7 @@ function renderExercises() {
 			let cls = "exercise-item";
 			if (rec && rec.passCount > 0) cls += " completed";
 			else if (rec && rec.attemptCount > 0) cls += " failed";
-			if (e.id === currentId) cls += " active";
+			if (e.id === getState("currentId")) cls += " active";
 			html += `<div class="${cls}" data-id="${escHtml(e.id)}" onclick="selectExercise('${escHtml(e.id)}')">
       <div class="title">${escHtml(e.title)}</div>
       <div class="meta"><span class="diff-badge diff-${escHtml(e.difficulty)}">${escHtml(e.difficulty)}</span>${escHtml(e.id)}</div>
@@ -329,15 +313,15 @@ function renderExercises() {
 }
 
 function selectExercise(id: string): void {
-	currentId = id;
+	setState("currentId", id);
 	renderExercises();
-	if (currentMode === "practice") loadPractice(id);
+	if (getState("currentMode") === "practice") loadPractice(id);
 	else loadSandbox();
 }
 
 // ─── Mode switch ───────────────────────────────────────────────────────────
 function switchMode(mode: string): void {
-	currentMode = mode as "practice" | "sandbox";
+	setState("currentMode", mode as "practice" | "sandbox");
 	document
 		.getElementById("tabPractice")
 		.classList.toggle("active", mode === "practice");
@@ -345,7 +329,7 @@ function switchMode(mode: string): void {
 		.getElementById("tabSandbox")
 		.classList.toggle("active", mode === "sandbox");
 	if (mode === "sandbox") loadSandbox();
-	else if (currentId) loadPractice(currentId);
+	else if (getState("currentId")) loadPractice(getState("currentId"));
 	else {
 		document.getElementById("mainContent").innerHTML =
 			'<div class="question" style="text-align:center;color:#8b949e;padding:60px 20px;"><h3>👈 Select an exercise</h3></div>';
@@ -412,29 +396,31 @@ function setEditorValue(editor: any, val: string): void {
 
 // ─── Load Schema into autocomplete hints ───────────────────────────────────
 function loadSchemaData() {
-	if (schemaData) {
+	if (getState("schemaData")) {
 		refreshEditorHints();
 		return;
 	}
-	schemaData = getSchema();
+	setState("schemaData", getSchema());
 	refreshEditorHints();
 }
 
 function refreshEditorHints(): void {
 	const tables: Record<string, string[]> = {};
-	if (schemaData) {
-		for (const [name, info] of Object.entries(schemaData)) {
+	if (getState("schemaData")) {
+		for (const [name, info] of Object.entries(getState("schemaData"))) {
 			tables[name] = (info as any).columns.map((c: any) => c.name);
 		}
 	}
 	const hintCfg = { tables, completeSingle: false };
-	if (cmEditor) cmEditor.setOption("hintOptions", hintCfg);
-	if (cmSandbox) cmSandbox.setOption("hintOptions", hintCfg);
+	if (getState("cmEditor"))
+		getState("cmEditor").setOption("hintOptions", hintCfg);
+	if (getState("cmSandbox"))
+		getState("cmSandbox").setOption("hintOptions", hintCfg);
 }
 
 // ─── Schema viewer (tables cards) ──────────────────────────────────────────
 function renderTableCards() {
-	if (!schemaData) return;
+	if (!getState("schemaData")) return;
 	const container = document.getElementById("sv-cards");
 	let html = '<div class="table-cards">';
 
@@ -453,7 +439,7 @@ function renderTableCards() {
 	];
 
 	for (const t of tableOrder) {
-		const info = schemaData[t];
+		const info = getState("schemaData")[t];
 		if (!info) continue;
 		const pkNames = info.columns.filter((c) => c.pk).map((c) => c.name);
 		const pkStr = pkNames.join(", ");
@@ -508,9 +494,9 @@ function renderTableCards() {
 // ─── Render Description tab ───────────────────────────────────────────────
 function renderDescription(): void {
 	const container = document.getElementById("bv-desc");
-	if (!container || !_descriptions) return;
+	if (!container || !getState("_descriptions")) return;
 	let html = '<div style="padding:12px">';
-	for (const [name, info] of Object.entries(_descriptions)) {
+	for (const [name, info] of Object.entries(getState("_descriptions"))) {
 		html += `<details style="margin-bottom:8px;background:#161b22;border:1px solid #30363d;border-radius:6px;padding:8px 12px">
       <summary style="cursor:pointer;font-weight:600;color:#e6edf3;font-size:13px">${escHtml(name)}</summary>
       <p style="margin:8px 0 4px;font-size:12px;color:#8b949e;line-height:1.5">${escHtml(info.description)}</p>
@@ -519,11 +505,15 @@ function renderDescription(): void {
         <tbody>`;
 		for (const [col, desc] of Object.entries(info.columns)) {
 			const isPk =
-				schemaData &&
-				schemaData[name]?.columns?.some((c: any) => c.name === col && c.pk);
+				getState("schemaData") &&
+				getState("schemaData")[name]?.columns?.some(
+					(c: any) => c.name === col && c.pk,
+				);
 			const isFk =
-				schemaData &&
-				schemaData[name]?.foreignKeys?.some((f: any) => f.from === col);
+				getState("schemaData") &&
+				getState("schemaData")[name]?.foreignKeys?.some(
+					(f: any) => f.from === col,
+				);
 			let colDisplay = escHtml(col);
 			if (isPk) colDisplay = "🔑 " + colDisplay;
 			if (isFk) colDisplay = "↳ " + colDisplay;
@@ -536,14 +526,14 @@ function renderDescription(): void {
 }
 
 function renderERDiagram() {
-	if (!schemaData) {
+	if (!getState("schemaData")) {
 		const container = document.getElementById("mermaidContainer");
 		if (container)
 			container.innerHTML =
 				'<div style="color:#8b949e;padding:20px;text-align:center">No tables to diagram.</div>';
 		return;
 	}
-	if (Object.keys(schemaData).length === 0) {
+	if (Object.keys(getState("schemaData")).length === 0) {
 		const container = document.getElementById("mermaidContainer");
 		if (container)
 			container.innerHTML =
@@ -555,7 +545,7 @@ function renderERDiagram() {
 	if (!container) return;
 
 	// Preset database — serve static pre-rendered SVG
-	if (activeDbId === "unilever") {
+	if (getState("activeDbId") === "unilever") {
 		container.innerHTML =
 			'<div style="text-align:center"><img src="db/Unilever_Product_Management.er.svg" alt="Entity-relationship diagram of the Unilever Product Management database showing 11 tables and their foreign key relationships" style="max-width:100%;height:auto" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\'" /><div style="display:none;color:#ff7b72;padding:20px;text-align:center">ER diagram image not available. Run <code>npm run build:er</code> to generate it.</div></div>';
 		return;
@@ -566,20 +556,20 @@ function renderERDiagram() {
 }
 
 function doRenderMermaid(container: HTMLElement): void {
-	if (typeof mermaid === "undefined" && !_mermaidLoading) {
+	if (typeof mermaid === "undefined" && !getState("_mermaidLoading")) {
 		container.innerHTML =
 			'<div style="color:#8b949e;padding:20px;text-align:center">⏳ Loading diagram renderer...</div>';
 
-		_mermaidLoading = true;
+		setState("_mermaidLoading", true);
 		const script = document.createElement("script");
 		script.src = "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js";
 		script.onload = () => {
-			_mermaidLoading = false;
+			setState("_mermaidLoading", false);
 			mermaid.initialize({ theme: "dark", startOnLoad: false });
 			renderMermaidFromSchema(container);
 		};
 		script.onerror = () => {
-			_mermaidLoading = false;
+			setState("_mermaidLoading", false);
 			container.innerHTML =
 				'<div style="color:#ff7b72;padding:20px;">Failed to load ER diagram renderer from CDN.</div>';
 		};
@@ -593,7 +583,7 @@ function doRenderMermaid(container: HTMLElement): void {
 function renderMermaidFromSchema(container: HTMLElement): void {
 	let mmd = "erDiagram\n";
 
-	for (const [name, info] of Object.entries(schemaData)) {
+	for (const [name, info] of Object.entries(getState("schemaData"))) {
 		mmd += `  ${escHtml(name)} {\n`;
 		for (const c of info.columns) {
 			const cType = c.type.toLowerCase().replace(/\(.*/, "");
@@ -607,7 +597,7 @@ function renderMermaidFromSchema(container: HTMLElement): void {
 	}
 
 	mmd += "\n";
-	for (const [name, info] of Object.entries(schemaData)) {
+	for (const [name, info] of Object.entries(getState("schemaData"))) {
 		for (const fk of info.foreignKeys) {
 			mmd += `  ${escHtml(fk.table)} ||--o{ ${escHtml(name)} : "${escHtml(fk.from)} → ${escHtml(fk.table)}.${escHtml(fk.to)}"\n`;
 		}
@@ -654,15 +644,15 @@ function showBottomView(view: string): void {
 	document
 		.querySelectorAll(".bottom-view")
 		.forEach((v) => v.classList.toggle("active", v.id === "bv-" + view));
-	if (view === "er" && schemaData) {
+	if (view === "er" && getState("schemaData")) {
 		setTimeout(() => renderERDiagram(), 100);
 	}
-	if (view === "checks" && schemaData) {
+	if (view === "checks" && getState("schemaData")) {
 		// checks may have missed init render; safe to re-call
 		const container = document.getElementById("bv-checks");
 		if (container && !container.innerHTML) renderChecks();
 	}
-	if (view === "desc" && _descriptions) {
+	if (view === "desc" && getState("_descriptions")) {
 		renderDescription();
 	}
 }
@@ -680,15 +670,17 @@ function toggleBottomPanel(): void {
 		// Restore previous height or default to 22% viewport
 		const prev = panel.dataset.prevHeight;
 		panel.style.height = prev || Math.round(window.innerHeight * 0.22) + "px";
-		if (schemaData) setTimeout(() => renderERDiagram(), 50);
+		if (getState("schemaData")) setTimeout(() => renderERDiagram(), 50);
 	}
-	if (cmEditor) setTimeout(() => cmEditor.refresh(), 50);
-	if (cmSandbox) setTimeout(() => cmSandbox.refresh(), 50);
+	if (getState("cmEditor"))
+		setTimeout(() => getState("cmEditor").refresh(), 50);
+	if (getState("cmSandbox"))
+		setTimeout(() => getState("cmSandbox").refresh(), 50);
 }
 
 function loadSchema() {
-	if (!schemaData) {
-		schemaData = getSchema();
+	if (!getState("schemaData")) {
+		setState("schemaData", getSchema());
 		renderTableCards();
 		refreshEditorHints();
 	}
@@ -697,9 +689,9 @@ function loadSchema() {
 // ─── Render Checks tab ─────────────────────────────────────────────────────
 function renderChecks(): void {
 	const container = document.getElementById("bv-checks");
-	if (!container || !schemaData) return;
+	if (!container || !getState("schemaData")) return;
 	let html = '<div class="table-cards">';
-	for (const [name, info] of Object.entries(schemaData)) {
+	for (const [name, info] of Object.entries(getState("schemaData"))) {
 		const pkNames = (info as any).columns
 			.filter((c: any) => c.pk)
 			.map((c: any) => c.name);
@@ -764,10 +756,13 @@ function addBottomResize(): void {
 			document.removeEventListener("mousemove", onMove);
 			document.removeEventListener("mouseup", onUp);
 			window.removeEventListener("blur", onBlur);
-			clearTimeout(_bottomResizeTimer);
-			_bottomResizeTimer = setTimeout(() => {
-				if (schemaData) renderERDiagram();
-			}, 300);
+			clearTimeout(getState("_bottomResizeTimer"));
+			setState(
+				"_bottomResizeTimer",
+				setTimeout(() => {
+					if (getState("schemaData")) renderERDiagram();
+				}, 300),
+			);
 		};
 
 		window.addEventListener("blur", onBlur);
@@ -778,7 +773,7 @@ function addBottomResize(): void {
 
 // ─── Practice Mode ─────────────────────────────────────────────────────────
 function loadPractice(id: string): void {
-	const ex = allExerciseDefs.find((e) => e.id === id);
+	const ex = getState("allExerciseDefs").find((e) => e.id === id);
 	if (!ex) return;
 	document.getElementById("mainTitle").textContent = ex.title;
 
@@ -801,12 +796,12 @@ function loadPractice(id: string): void {
     </div>
     <div id="results"></div>`;
 
-	if (cmEditor) {
-		cmEditor.toTextArea();
-		cmEditor = null;
+	if (getState("cmEditor")) {
+		getState("cmEditor").toTextArea();
+		setState("cmEditor", null);
 	}
 	const last = sessionStorage.getItem("lastQuery_" + id) || "";
-	cmEditor = createEditor("editorContainer", last);
+	setState("cmEditor", createEditor("editorContainer", last));
 	const actions = content.querySelector(".sql-actions");
 	content
 		.querySelector("#editorContainer")
@@ -815,20 +810,20 @@ function loadPractice(id: string): void {
 			actions,
 		);
 
-	cmEditor.setOption("extraKeys", {
+	getState("cmEditor").setOption("extraKeys", {
 		"Ctrl-Space": "autocomplete",
 		"Ctrl-Enter": () => runJudge(),
 		"Cmd-Enter": () => runJudge(),
 	});
 
-	if (schemaData) {
-		cmEditor.setOption("hintOptions", {
+	if (getState("schemaData")) {
+		getState("cmEditor").setOption("hintOptions", {
 			tables: buildTableHints(),
 			completeSingle: false,
 		});
 	}
 
-	cmEditor.focus();
+	getState("cmEditor").focus();
 }
 
 // ─── Sandbox Mode ──────────────────────────────────────────────────────────
@@ -847,13 +842,13 @@ function loadSandbox() {
     </div>
     <div id="sandboxResults"></div>`;
 
-	if (cmSandbox) {
-		cmSandbox.toTextArea();
-		cmSandbox = null;
+	if (getState("cmSandbox")) {
+		getState("cmSandbox").toTextArea();
+		setState("cmSandbox", null);
 	}
-	cmSandbox = createEditor(
-		"sandboxContainer",
-		"SELECT * FROM HANG_HOA LIMIT 5;",
+	setState(
+		"cmSandbox",
+		createEditor("sandboxContainer", "SELECT * FROM HANG_HOA LIMIT 5;"),
 	);
 	const actions = content.querySelector(".sql-actions");
 	content
@@ -863,27 +858,27 @@ function loadSandbox() {
 			actions,
 		);
 
-	cmSandbox.setOption("extraKeys", {
+	getState("cmSandbox").setOption("extraKeys", {
 		"Ctrl-Space": "autocomplete",
 		"Ctrl-Enter": () => runSandbox(),
 		"Cmd-Enter": () => runSandbox(),
 	});
 
-	if (schemaData) {
-		cmSandbox.setOption("hintOptions", {
+	if (getState("schemaData")) {
+		getState("cmSandbox").setOption("hintOptions", {
 			tables: buildTableHints(),
 			completeSingle: false,
 		});
 	}
 
-	cmSandbox.focus();
+	getState("cmSandbox").focus();
 }
 
 // ─── Build table hints from schema ─────────────────────────────────────────
 function buildTableHints() {
-	if (!schemaData) return {};
+	if (!getState("schemaData")) return {};
 	const tables = {};
-	for (const [name, info] of Object.entries(schemaData)) {
+	for (const [name, info] of Object.entries(getState("schemaData"))) {
 		tables[name] = info.columns.map((c) => c.name);
 		tables[name.toLowerCase()] = info.columns.map((c) => c.name);
 	}
@@ -892,11 +887,13 @@ function buildTableHints() {
 
 // ─── Judge (client-side) ───────────────────────────────────────────────────
 function runJudge() {
-	const query = getEditorValue(cmEditor);
+	const query = getEditorValue(getState("cmEditor"));
 	if (!query) return;
-	sessionStorage.setItem("lastQuery_" + currentId, query);
+	sessionStorage.setItem("lastQuery_" + getState("currentId"), query);
 
-	const ex = allExerciseDefs.find((e) => e.id === currentId);
+	const ex = getState("allExerciseDefs").find(
+		(e) => e.id === getState("currentId"),
+	);
 	if (!ex) return;
 
 	const btn = document.getElementById("runBtn") as HTMLButtonElement;
@@ -928,7 +925,7 @@ function runJudge() {
 			solution: ex.solution,
 			hint: ex.hint || null,
 		});
-		recordAttempt(currentId!, result.pass);
+		recordAttempt(getState("currentId")!, result.pass);
 		btn.disabled = false;
 		status.textContent = "";
 	}, 50);
@@ -980,7 +977,7 @@ function renderJudgeResults(data: any): void {
 
 // ─── Sandbox query ─────────────────────────────────────────────────────────
 function runSandbox() {
-	const query = getEditorValue(cmSandbox);
+	const query = getEditorValue(getState("cmSandbox"));
 	if (!query) return;
 	const btn = document.getElementById("sandboxRunBtn") as HTMLButtonElement;
 	const status = document.getElementById("sandboxStatus");
@@ -1008,11 +1005,11 @@ function runSandbox() {
 // ─── Database management (client-side) ─────────────────────────────────────
 
 function updateDbStatusUI() {
-	document.getElementById("dbName").textContent = activeDbName;
+	document.getElementById("dbName").textContent = getState("activeDbName");
 	document.getElementById("dbBadge").className =
-		"db-badge" + (activeDbId === "custom" ? " custom" : "");
+		"db-badge" + (getState("activeDbId") === "custom" ? " custom" : "");
 	document.getElementById("resetBtn").style.display =
-		activeDbId === "custom" ? "" : "none";
+		getState("activeDbId") === "custom" ? "" : "none";
 }
 
 function showLoadSqlModal() {
@@ -1066,21 +1063,21 @@ function loadSqlFromText() {
 
 	setTimeout(() => {
 		try {
-			const newDb = new SQL.Database();
+			const newDb = new (getState("SQL").Database)();
 			newDb.run("PRAGMA foreign_keys = ON");
 			newDb.run(sql);
-			db = newDb;
-			activeDbName = name;
-			activeDbId = "custom";
-			currentFilter = "all";
-			currentSort = "default";
-			currentSortDir = "asc";
+			setState("db", newDb);
+			setState("activeDbName", name);
+			setState("activeDbId", "custom");
+			setState("currentFilter", "all");
+			setState("currentSort", "default");
+			setState("currentSortDir", "asc");
 
 			closeLoadSqlModal();
-			schemaData = null;
-			cmEditor = null;
-			cmSandbox = null;
-			currentId = null;
+			setState("schemaData", null);
+			setState("cmEditor", null);
+			setState("cmSandbox", null);
+			setState("currentId", null);
 			updateDbStatusUI();
 
 			const content = document.getElementById("mainContent");
@@ -1092,7 +1089,7 @@ function loadSqlFromText() {
 			document
 				.querySelectorAll(".exercise-item")
 				.forEach((el) => el.classList.remove("active"));
-			schemaData = getSchema();
+			setState("schemaData", getSchema());
 			loadExercises();
 			renderTableCards();
 			renderERDiagram();
@@ -1109,17 +1106,17 @@ function loadSqlFromText() {
 async function resetDatabase() {
 	const res = await fetch("db/Unilever_Product_Management.db");
 	const buffer = await res.arrayBuffer();
-	db = new SQL.Database(new Uint8Array(buffer));
-	activeDbName = "Unilever Product Management";
-	activeDbId = "unilever";
-	currentFilter = "all";
-	currentSort = "default";
-	currentSortDir = "asc";
+	setState("db", new (getState("SQL").Database)(new Uint8Array(buffer)));
+	setState("activeDbName", "Unilever Product Management");
+	setState("activeDbId", "unilever");
+	setState("currentFilter", "all");
+	setState("currentSort", "default");
+	setState("currentSortDir", "asc");
 
-	schemaData = null;
-	cmEditor = null;
-	cmSandbox = null;
-	currentId = null;
+	setState("schemaData", null);
+	setState("cmEditor", null);
+	setState("cmSandbox", null);
+	setState("currentId", null);
 	updateDbStatusUI();
 	document.getElementById("mainTitle").textContent =
 		"Unilever Product Management";
@@ -1128,7 +1125,7 @@ async function resetDatabase() {
 	document
 		.querySelectorAll(".exercise-item")
 		.forEach((el) => el.classList.remove("active"));
-	schemaData = getSchema();
+	setState("schemaData", getSchema());
 	loadExercises();
 	renderTableCards();
 	renderERDiagram();
@@ -1174,29 +1171,28 @@ function resultTable(
 	return html;
 }
 
-// ─── Expose functions to window for inline onclick handlers ────────────────
-// With --bundle, function declarations are scoped inside the IIFE and not
-// visible to onclick attributes in index.html or generated HTML strings.
-const _w = window as any;
-_w.selectExercise = selectExercise;
-_w.switchMode = switchMode;
-_w.showSidebar = showSidebar;
-_w.showSchemaView = showSchemaView;
-_w.showBottomView = showBottomView;
-_w.showLoadSqlModal = showLoadSqlModal;
-_w.closeLoadSqlModal = closeLoadSqlModal;
-_w.loadSqlFromText = loadSqlFromText;
-_w.resetDatabase = resetDatabase;
-_w.resetProgress = resetProgress;
-_w.loadSchema = loadSchema;
-_w.runJudge = runJudge;
-_w.runSandbox = runSandbox;
-_w.setEditorValue = setEditorValue;
-_w.toggleBottomPanel = toggleBottomPanel;
-_w.setFilter = setFilter;
-_w.setSort = setSort;
-
 // ─── Init ──────────────────────────────────────────────────────────────────
+
+// ─── Window exposure ──────────────────────────────────────────────
+expose("selectExercise", selectExercise);
+expose("switchMode", switchMode);
+expose("showSidebar", showSidebar);
+expose("showSchemaView", showSchemaView);
+expose("showBottomView", showBottomView);
+expose("showLoadSqlModal", showLoadSqlModal);
+expose("closeLoadSqlModal", closeLoadSqlModal);
+expose("loadSqlFromText", loadSqlFromText);
+expose("resetDatabase", resetDatabase);
+expose("resetProgress", resetProgress);
+expose("loadSchema", loadSchema);
+expose("runJudge", runJudge);
+expose("runSandbox", runSandbox);
+expose("setEditorValue", setEditorValue);
+expose("toggleBottomPanel", toggleBottomPanel);
+expose("setFilter", setFilter);
+expose("setSort", setSort);
+exposeState("cmEditor", () => getState("cmEditor"));
+exposeState("cmSandbox", () => getState("cmSandbox"));
 
 async function init() {
 	// Load version badge and exercises concurrently (independent of WASM/DB)
@@ -1213,7 +1209,7 @@ async function init() {
 		(async () => {
 			try {
 				const exRes = await fetch("exercises/exercises.json");
-				allExerciseDefs = await exRes.json();
+				setState("allExerciseDefs", await exRes.json());
 			} catch {
 				/* exercises fetch is best-effort */
 			}
@@ -1223,7 +1219,7 @@ async function init() {
 				const dRes = await fetch(
 					"db/Unilever_Product_Management.descriptions.json",
 				);
-				_descriptions = await dRes.json();
+				setState("_descriptions", await dRes.json());
 			} catch {
 				/* descriptions fetch is best-effort */
 			}
@@ -1232,9 +1228,12 @@ async function init() {
 
 	// Initialize sql.js (loads WASM from CDN)
 	try {
-		SQL = await initSqlJs({
-			locateFile: (file) => "vendor/" + file,
-		});
+		setState(
+			"SQL",
+			await initSqlJs({
+				locateFile: (file) => "vendor/" + file,
+			}),
+		);
 	} catch (e) {
 		document.getElementById("mainContent").innerHTML =
 			'<div class="question" style="text-align:center;color:#ff7b72;padding:60px 20px;"><h3>❌ Failed to load SQL engine: ' +
@@ -1247,7 +1246,7 @@ async function init() {
 	try {
 		const dbRes = await fetch("db/Unilever_Product_Management.db");
 		const dbBuffer = await dbRes.arrayBuffer();
-		db = new SQL.Database(new Uint8Array(dbBuffer));
+		setState("db", new (getState("SQL").Database)(new Uint8Array(dbBuffer)));
 	} catch (e) {
 		document.getElementById("mainContent").innerHTML =
 			'<div class="question" style="text-align:center;color:#ff7b72;padding:60px 20px;"><h3>❌ Failed to load database: ' +
@@ -1257,7 +1256,7 @@ async function init() {
 	}
 
 	updateDbStatusUI();
-	schemaData = getSchema();
+	setState("schemaData", getSchema());
 	renderTableCards();
 	renderERDiagram();
 	renderChecks();
